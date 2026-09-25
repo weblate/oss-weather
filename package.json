@@ -100,7 +100,8 @@
     "devDependencies": {
         "@akylas/nativescript-ios-runtime": "9.0.3",
         "@akylas/nativescript-webpack": "5.0.35",
-        "@nativescript/android-quickjs-ng": "9.1.0-alpha.0",
+        "@nativescript/android": "9.0.5",
+        "@nativescript/android-quickjs-ng": "9.0.0-alpha.3",
         "@nativescript/core": "~9.0.20",
         "@swc/core": "1.13.5",
         "@types/geojson": "^7946.0.16",

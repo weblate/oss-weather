@@ -3193,10 +3193,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nativescript/android-quickjs-ng@npm:9.1.0-alpha.0":
-  version: 9.1.0-alpha.0
-  resolution: "@nativescript/android-quickjs-ng@npm:9.1.0-alpha.0"
-  checksum: 10/696efa6d6b8f8f3c93f49144d6174b9cbc04c11e29b8776b3b8a2c79ebdac8b48f96a7009deb6078565cd523216538ac11a4f18d639e87c14f7d64e371ffb29e
+"@nativescript/android-quickjs-ng@npm:9.0.0-alpha.3":
+  version: 9.0.0-alpha.3
+  resolution: "@nativescript/android-quickjs-ng@npm:9.0.0-alpha.3"
+  checksum: 10/f931f22a55fbca6732346fa9d9e392d3f73cca0c4dd3ec62a77c7a7224533bed6c9ce7372d9270a1b4a0622b874a265bfbbd225058e4edaa0170f5078db30a73
+  languageName: node
+  linkType: hard
+
+"@nativescript/android@npm:9.0.5":
+  version: 9.0.5
+  resolution: "@nativescript/android@npm:9.0.5"
+  checksum: 10/5d9e18834aea70b90c888d4e0b1e7c496770ea5d121c371959414608a1b6c908870e9df08d73916dedb983e9ebc213cbb8f628982d9d017c9b4623b3bf7e5b6c
   languageName: node
   linkType: hard
 
@@ -13752,7 +13759,8 @@ __metadata:
     "@nativescript-community/ui-webview": "npm:1.6.2"
     "@nativescript-community/ui-zoomimage": "npm:4.6.20"
     "@nativescript-community/universal-links": "npm:3.0.2"
-    "@nativescript/android-quickjs-ng": "npm:9.1.0-alpha.0"
+    "@nativescript/android": "npm:9.0.5"
+    "@nativescript/android-quickjs-ng": "npm:9.0.0-alpha.3"
     "@nativescript/core": "npm:~9.0.20"
     "@nativescript/iqkeyboardmanager": "npm:2.1.2"
     "@swc/core": "npm:1.13.5"
