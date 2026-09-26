@@ -10,7 +10,8 @@
     import { onThemeChanged } from '~/helpers/theme';
     import { WeatherLocation } from '~/services/api';
     import { iconService, onIconAnimationsChanged } from '~/services/icon';
-    import { actionBarHeight, fontScale, hourlyViewData, hourlyViewMode, onFontScaleChanged, onUnitsChanged, screenHeightDips, screenWidthDips, topViewHeight, windowInset } from '~/variables';
+    import { computeTopViewHeight } from '~/utils/topViewHeight';
+    import { actionBarHeight, fontScale, hourlyViewData, hourlyViewMode, isMacCatalyst, onFontScaleChanged, onUnitsChanged, topViewHeight, windowInset, windowSize } from '~/variables';
 
     export let items: any[];
     export let weatherLocation: WeatherLocation;
@@ -21,7 +22,15 @@
     let collectionView: NativeViewElementNode<CollectionView>;
     let topHeight = 0;
     $: {
-        topHeight = Math.max((Math.max(screenWidthDips, screenHeightDips) - $actionBarHeight - windowInsetBottom - windowInsetTop - 100) * 0.6 * Math.sqrt($fontScale), 370);
+        topHeight = computeTopViewHeight({
+            windowWidth: $windowSize.width,
+            windowHeight: $windowSize.height,
+            actionBarHeight: $actionBarHeight,
+            insetTop: windowInsetTop,
+            insetBottom: windowInsetBottom,
+            fontScale: $fontScale,
+            resizableWindow: isMacCatalyst
+        });
         if ($hourlyViewMode === 'windy') {
             topHeight = Math.max(topHeight, $topViewHeight + computeWindyViewMinHeight($hourlyViewData, $fontScale));
         }
