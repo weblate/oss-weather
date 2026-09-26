@@ -48,6 +48,7 @@ The repo config files are the source of truth — follow them, don't restate the
 
 Beyond those:
 
+- Comments are rare and short (max 2-3 lines). Only to explain a hack or something not obvious from the code — never narrate what the code plainly does.
 - Prefer `const`/`let`, never `var`.
 - NEVER use a single-letter variable name — always prefer an explicit name.
 - Colors are ALWAYS hex (`#ffb82b`), never `rgb()`/`rgba()`. When a source gives separate channels, convert to hex before storing it.
