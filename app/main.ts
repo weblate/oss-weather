@@ -18,6 +18,7 @@ import { init as sharedInit } from '@shared/index';
 import { startSentry } from '@shared/utils/sentry';
 import WeatherPage from '~/components/WeatherPage.svelte';
 import { start as startThemeHelper } from '~/helpers/theme';
+import { startWindowHelper } from '~/utils/window';
 
 import { networkService } from './services/api';
 import { navigate } from '@shared/utils/svelte/ui';
@@ -87,6 +88,7 @@ try {
 
     Application.on(Application.launchEvent, async () => {
         startThemeHelper();
+        startWindowHelper();
     });
     Application.on(Application.exitEvent, async () => {
         DEV_LOG && console.log('exitEvent');

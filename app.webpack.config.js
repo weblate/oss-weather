@@ -98,7 +98,9 @@ module.exports = (env, params = {}) => {
         );
     }
 
-    const platform = env && ((env.android && 'android') || (env.ios && 'ios'));
+    const isCatalyst = !!(env && env.catalyst);
+    // Catalyst builds are iOS builds, they only differ by platforms folder.
+    const platform = env && ((env.android && 'android') || ((env.ios || isCatalyst) && 'ios'));
     const isIOS = platform === 'ios';
     const isAndroid = platform === 'android';
     const {
@@ -271,6 +273,7 @@ module.exports = (env, params = {}) => {
         __CSS_USE_CSS_TOOLS__: false,
         __IOS__: isIOS,
         __ANDROID__: isAndroid,
+        __CATALYST__: isCatalyst,
         'global.autoLoadPolyfills': false,
         TNS_ENV: JSON.stringify(mode),
         __APP_ID__: `"${appId}"`,
