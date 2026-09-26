@@ -275,7 +275,7 @@
     "fontPref": {
       "prefix": "app-",
       "metadata": {
-        "fontFamily": "app",
+        "fontFamily": "ossweather",
         "majorVersion": 1,
         "minorVersion": 0
       },

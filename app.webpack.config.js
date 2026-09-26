@@ -332,7 +332,7 @@ module.exports = (env, params = {}) => {
             appIcons[v.name.replace('$app-', '')] = String.fromCharCode(parseInt(v.value.slice(11, -2), 16));
         });
 
-    const scssPrepend = `$appFontFamily: app;
+    const scssPrepend = `$appFontFamily: ossweather;
     $wiFontFamily: ${platform === 'android' ? 'weathericons-regular-webfont' : 'Weather Icons'};
     $mdiFontFamily: ${platform === 'android' ? 'materialdesignicons-webfont' : 'Material Design Icons'};
     `;
