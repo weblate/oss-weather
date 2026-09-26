@@ -18,7 +18,7 @@ module.exports = {
         defaultLanguage: 'en'
     },
     ios: {
-        runtimePackageName: '@akylas/nativescript-ios-runtime',
+        // runtimePackageName: '@akylas/nativescript-ios-runtime',
         ignoredNativeDependencies: ['plugin-widgets']
         // SPMPackages: [
         //     {
