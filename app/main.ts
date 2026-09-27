@@ -1,5 +1,7 @@
 // (com as any).tns.Runtime.getCurrentRuntime().enableVerboseLogging();
 // we need to use lat lon
+// first: sets the Mac Catalyst app delegate before plugins create their own
+import { startWindowHelper } from '@shared/utils/window';
 import { install as installGestures } from '@nativescript-community/gesturehandler';
 import { setGeoLocationKeys } from '@nativescript-community/gps';
 import { svelteNative } from '@nativescript-community/svelte-native';
@@ -17,8 +19,8 @@ import { Application, ApplicationSettings, Trace, Utils } from '@nativescript/co
 import { init as sharedInit } from '@shared/index';
 import { startSentry } from '@shared/utils/sentry';
 import WeatherPage from '~/components/WeatherPage.svelte';
+import { lc } from '~/helpers/locale';
 import { start as startThemeHelper } from '~/helpers/theme';
-import { startWindowHelper } from '~/utils/window';
 
 import { networkService } from './services/api';
 import { navigate } from '@shared/utils/svelte/ui';
@@ -88,7 +90,7 @@ try {
 
     Application.on(Application.launchEvent, async () => {
         startThemeHelper();
-        startWindowHelper();
+        startWindowHelper({ refreshMenuTitle: lc('refresh') });
     });
     Application.on(Application.exitEvent, async () => {
         DEV_LOG && console.log('exitEvent');
