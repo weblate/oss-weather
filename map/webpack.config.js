@@ -39,7 +39,10 @@ module.exports = (env = {}, params = {}) => {
                 // svelte: path.resolve(__dirname, '../node_modules/svelte')
             },
             extensions: ['.mjs', '.js', '.ts', '.svelte'],
-            mainFields: ['svelte', 'browser', 'module', 'main']
+            mainFields: ['svelte', 'browser', 'module', 'main'],
+            fallback: {
+                crypto: false
+            }
             // plugins: [
             //     new PathsPlugin({
             //         extensions: ['.mjs', '.js', '.ts', '.svelte']

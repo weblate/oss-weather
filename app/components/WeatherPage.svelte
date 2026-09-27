@@ -15,6 +15,7 @@
     import { Application, ApplicationSettings, Color, ContentView, CoreTypes, EventData, File, Page, Screen, knownFolders, path } from '@nativescript/core';
     import { openFile, throttle } from '@nativescript/core/utils';
     import { alert, showError } from '@shared/utils/showError';
+    import { refreshRequestedEvent } from '@shared/utils/window';
     import { globalObservable, navigate, showModal } from '@shared/utils/svelte/ui';
     import dayjs from 'dayjs';
     import type { FeatureCollection, MultiPolygon } from 'geojson';
@@ -585,6 +586,7 @@
     onMount(async () => {
         if (__IOS__) {
             Application.on(Application.orientationChangedEvent, onOrientationChanged);
+            Application.on(refreshRequestedEvent, manualRefreshWeather);
         }
         if (weatherLocation && providerRequiresApiKey(provider)) {
             const providerClass = getProviderClass(provider);
@@ -621,6 +623,7 @@
     onDestroy(() => {
         if (__IOS__) {
             Application.off(Application.orientationChangedEvent, onOrientationChanged);
+            Application.off(refreshRequestedEvent, manualRefreshWeather);
         }
     });
 
