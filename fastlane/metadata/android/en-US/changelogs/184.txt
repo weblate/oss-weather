@@ -1,0 +1,8 @@
+Features:
+- add LibreWXR frame selection and tile url helpers
+- render LibreWXR radar and satellite in weather map
+- make LibreWXR the default weather map source
+
+Bug fixes:
+- give each line metric its own scale (#507)
+- Translations update
