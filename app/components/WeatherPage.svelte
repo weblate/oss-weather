@@ -86,6 +86,7 @@
     import { actionBarHeight, colors, fontScale, fonts, onFontScaleChanged, onSettingsChanged, windowInset } from '~/variables';
     import IconButton from './common/IconButton.svelte';
     import { WeatherProvider } from '~/services/providers/weatherprovider';
+    import { isLibreWXRSource } from '~/services/providers/librewxr';
     import { MaptilerProvider } from '~/services/providers/maptiler';
     import WeatherIcon from '~/components/WeatherIcon.svelte';
 
@@ -1026,7 +1027,7 @@
     }
 
     async function goToWeatherMap(props = { focusPos: weatherLocation ? weatherLocation.coord : undefined }) {
-        if (!MaptilerProvider.hasApiKey()) {
+        if (!isLibreWXRSource() && !MaptilerProvider.hasApiKey()) {
             if (!(await askForApiKey('maptiler', false))) {
                 return;
             }

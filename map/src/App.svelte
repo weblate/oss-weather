@@ -1,12 +1,13 @@
 <script lang="ts">
     import { ColorRamp, PrecipitationLayer, PressureLayer, RadarLayer, TemperatureLayer, TileLayer, type WeatherPayload, WindLayer } from '@maptiler/weather';
-    import { type LngLatLike, Map, MapStyle, Marker, type StyleSpecification, config } from '@maptiler/sdk';
+    import { type LngLatLike, Map, MapMLGL, MapStyle, Marker, type StyleSpecification, config } from '@maptiler/sdk';
     import '@maptiler/sdk/dist/maptiler-sdk.css';
     import './global.css';
     import './rainviewer.css';
     import { onDestroy } from 'svelte';
     // import RainViewerLegend from './RainViewerLegend.svelte';
     import RangeSlider from 'svelte-range-slider-pips';
+    import { LIBREWXR_MODES, LibreWXRLayer } from './LibreWXRLayer';
     let weatherLayer: TileLayer;
     let isPlaying = false;
     let currentTime = null;
@@ -27,10 +28,14 @@
         }, {});
     }
     const urlParamers = GetURLParameters();
-    let map: Map;
+    let map: InstanceType<typeof MapMLGL>;
 
     let options = {
         apiKey: urlParamers['apiKey'],
+        mapSource: urlParamers['mapSource'] ?? 'librewxr',
+        librewxrUrl: urlParamers['librewxrUrl'] || 'https://api.librewxr.net',
+        snow: (urlParamers['snow'] ?? 'true') === 'true',
+        forecastLabel: urlParamers['forecastLabel'] || 'forecast',
         source: urlParamers['source'],
         layer: urlParamers['layer'] ?? 'radar',
         position: urlParamers['position']?.split(',').map(parseFloat).reverse() as LngLatLike,
@@ -50,6 +55,11 @@
         tileSize: parseFloat(urlParamers['tileSize'] || '256') // can be 256 or 512.
     };
 
+    // the location picker and LibreWXR use plain maplibre: no MapTiler request or telemetry
+    const isLibreWXR = options.mapSource !== 'maptiler';
+    let libreWXRLayer: LibreWXRLayer;
+    let animationTimer: ReturnType<typeof setInterval>;
+
     // Make sure you set your MapTiler Cloud API key:
     config.apiKey = options.apiKey;
     // console.log(`options ${JSON.stringify(options)}`);
@@ -63,7 +73,7 @@
     }
 
     function createMap(container) {
-        return new Promise<Map>(async (resolve, reject) => {
+        return new Promise<typeof map>(async (resolve, reject) => {
             // Initialise the map
             const style: StyleSpecification = await import(`./${options.dark === 'light' ? 'light' : 'dark'}_theme.json`);
             if (options.source) {
@@ -86,7 +96,8 @@
 
             // Let's assume you have a div container to place your map in
             // console.log('create map');
-            map = new Map({
+            const MapClass = isLibreWXR || options.useToPickLocation ? MapMLGL : Map;
+            map = new MapClass({
                 fadeDuration: 0,
                 validateStyle: false,
                 attributionControl: {
@@ -94,7 +105,7 @@
                     customAttribution: options.hideAttribution
                         ? []
                         : ['<a href="https://maplibre.org/">MapLibre</a>', '<a href="https://www.openstreetmap.org">OpenStreetMap</a>'].concat(
-                              options.useToPickLocation ? [] : ['<a href="https://www.maptiler.com/weather/">MapTiler</a>']
+                              options.useToPickLocation ? [] : [isLibreWXR ? '<a href="https://librewxr.net/">LibreWXR</a>' : '<a href="https://www.maptiler.com/weather/">MapTiler</a>']
                           )
                 },
                 container,
@@ -270,11 +281,38 @@
                             window['nsWebViewBridge'].emit('position', e.lngLat);
                         }
                     });
+                } else if (isLibreWXR) {
+                    loadLibreWXRLayer();
                 } else {
                     refreshWeatherLayer();
                 }
             })
             .catch((err) => console.error(err));
+    }
+    async function loadLibreWXRLayer() {
+        const color = parseInt(options.colors, 10);
+        libreWXRLayer = new LibreWXRLayer(map, {
+            url: options.librewxrUrl,
+            mode: LIBREWXR_MODES.find((mode) => mode === options.layer) ?? 'radar',
+            color: isNaN(color) ? 7 : color,
+            snow: options.snow,
+            opacity: options.layerOpacity,
+            showHistory: options.showHistory,
+            maxTimeSpan: options.maxTimeSpan,
+            timeInterval: options.timeInterval
+        });
+        try {
+            await libreWXRLayer.load();
+        } catch (error) {
+            console.error('failed to load LibreWXR', error);
+            return;
+        }
+        sliderMin = 0;
+        sliderMax = Math.max(libreWXRLayer.frames.length - 1, 0);
+        refreshTime();
+        if (options.animated && libreWXRLayer.frames.length) {
+            playAnimation();
+        }
     }
     // let currentIndex = 0;
     // let lastIndex = -1;
@@ -288,6 +326,15 @@
 
     // Update the date time display
     function refreshTime() {
+        if (isLibreWXR) {
+            const frame = libreWXRLayer.frames[libreWXRLayer.currentIndex];
+            if (frame) {
+                const label = new Date(frame.time * 1000).toLocaleString(options.language, { timeStyle: 'short', dateStyle: 'short' });
+                document.getElementById('timestamp').innerText = frame.nowcast ? `${label} (${options.forecastLabel})` : label;
+                sliderValue = libreWXRLayer.currentIndex;
+            }
+            return;
+        }
         const d = weatherLayer.getAnimationTimeDate();
         // console.log('refreshTime', d);
         document.getElementById('timestamp').innerHTML = d.toLocaleString(options.language, { timeStyle: 'medium', dateStyle: 'short' });
@@ -318,17 +365,36 @@
     // }
 
     function pauseAnimation() {
-        weatherLayer.animate(0);
+        if (isLibreWXR) {
+            clearInterval(animationTimer);
+            animationTimer = undefined;
+        } else {
+            weatherLayer.animate(0);
+        }
         //   playPauseButton.innerText = "Play 3600x";
         isPlaying = false;
     }
 
     function playAnimation() {
-        weatherLayer.animate(options.timeInterval * 10 * options.animationSpeed);
+        if (isLibreWXR) {
+            // animationSpeed defaults to 100: 500ms per frame
+            animationTimer = setInterval(() => {
+                libreWXRLayer.showFrame((libreWXRLayer.currentIndex + 1) % libreWXRLayer.frames.length);
+                refreshTime();
+            }, options.animationSpeed * 5);
+        } else {
+            weatherLayer.animate(options.timeInterval * 10 * options.animationSpeed);
+        }
         isPlaying = true;
     }
     function startStopAnimation() {
-        weatherLayer.setAnimationTime(sliderValue / 1000);
+        if (isLibreWXR) {
+            if (!libreWXRLayer?.frames.length) {
+                return;
+            }
+        } else {
+            weatherLayer.setAnimationTime(sliderValue / 1000);
+        }
         if (!isPlaying) {
             playAnimation();
         } else {
@@ -364,7 +430,11 @@
     function setIndex(value) {
         try {
             // console.log('setIndex', typeof value, value);
-            weatherLayer.setAnimationTime(value / 1000);
+            if (isLibreWXR) {
+                libreWXRLayer?.showFrame(value);
+            } else {
+                weatherLayer.setAnimationTime(value / 1000);
+            }
             refreshTime();
             // stopAnimation();
             // lastIndex = currentIndex;
@@ -375,6 +445,7 @@
         }
     }
     onDestroy(() => {
+        clearInterval(animationTimer);
         map?.remove();
     });
 
@@ -382,7 +453,7 @@
         return new Date(value).toLocaleTimeString();
     }
 
-    const handleFormatter = (value) => getFormattedDate(value);
+    const handleFormatter = (value) => (isLibreWXR ? getFormattedDate((libreWXRLayer?.frames[value]?.time ?? 0) * 1000) : getFormattedDate(value));
     //@ts-ignore
     window.getZoom = function () {
         return map.getZoom();
@@ -412,7 +483,11 @@
                 // }
                 break;
             case 'layerOpacity':
-                weatherLayer.setOpacity(options.layerOpacity);
+                if (isLibreWXR) {
+                    libreWXRLayer?.setOpacity(options.layerOpacity);
+                } else {
+                    weatherLayer.setOpacity(options.layerOpacity);
+                }
                 // refreshMap();
                 break;
             case 'colors':
@@ -449,7 +524,7 @@
                         max={sliderMax}
                         min={sliderMin}
                         pips
-                        step={options.timeInterval * 60 * 1000}
+                        step={isLibreWXR ? 1 : options.timeInterval * 60 * 1000}
                         values={[sliderValue]}
                         on:start={pauseAnimation}
                         on:change={(e) => setIndex(e.detail.value)} />

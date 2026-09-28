@@ -16,8 +16,8 @@
             moduleUrl: 'https://erikflowers.github.io/weather-icons/'
         },
         {
-            moduleName: 'RainViewer',
-            moduleUrl: 'https://www.rainviewer.com/api.html'
+            moduleName: 'LibreWXR',
+            moduleUrl: 'https://librewxr.net'
         },
         {
             moduleName: 'OpenStreetMap',
