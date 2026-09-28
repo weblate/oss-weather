@@ -406,7 +406,8 @@ platform :ios do
   private_lane :setup_project do
     
   end
-  lane :upload_store  do |params| 
+  lane :upload_store  do |params|
+    options = params[:options]
     build_output = params[:build_output]
     api_key = build_output['api_key']
     # if (ENV["GITHUB_ACTIONS"] == 'true')
