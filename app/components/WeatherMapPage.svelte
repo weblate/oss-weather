@@ -13,6 +13,19 @@
     import { currentTheme, onThemeChanged } from '~/helpers/theme';
     import { networkService } from '~/services/api';
     import {
+        LIBREWXR_COLORS,
+        LIBREWXR_COLOR_SCHEMES,
+        LIBREWXR_LAYER,
+        LIBREWXR_LAYERS,
+        LIBREWXR_URL,
+        SETTINGS_LIBREWXR_COLORS,
+        SETTINGS_LIBREWXR_LAYER,
+        SETTINGS_LIBREWXR_URL,
+        SETTINGS_WEATHER_MAP_SOURCE,
+        WEATHER_MAP_SOURCE,
+        isLibreWXRSource
+    } from '~/services/providers/librewxr';
+    import {
         MaptilerProvider,
         SETTINGS_WEATHER_MAP_ANIMATION_SPEED,
         SETTINGS_WEATHER_MAP_COLORS,
@@ -21,6 +34,7 @@
         SETTINGS_WEATHER_MAP_LAYER_OPACITY,
         SETTINGS_WEATHER_MAP_MAX_TIME_SPAN,
         SETTINGS_WEATHER_MAP_SHOW_HISTORY,
+        SETTINGS_WEATHER_MAP_SHOW_SNOW,
         SETTINGS_WEATHER_MAP_TIME_INTERVAL,
         WEATHER_MAP_ANIMATION_SPEED,
         WEATHER_MAP_COLORS,
@@ -28,6 +42,7 @@
         WEATHER_MAP_LAYER,
         WEATHER_MAP_LAYERS,
         WEATHER_MAP_LAYER_OPACITY,
+        WEATHER_MAP_SHOW_SNOW,
         getLayerTitle
     } from '~/services/providers/maptiler';
     import { queryString } from '~/utils/http';
@@ -43,18 +58,23 @@
     const customSource = ApplicationSettings.getString(SETTINGS_WEATHER_MAP_CUSTOM_TILE_SOURCE, undefined);
     let mapCenter = focusPos;
     let animated = false;
-    let colors = WEATHER_MAP_COLORS;
+    const isLibreWXR = isLibreWXRSource();
+    let colors = isLibreWXR ? LIBREWXR_COLORS + '' : WEATHER_MAP_COLORS;
     try {
-        colors = ApplicationSettings.getString(SETTINGS_WEATHER_MAP_COLORS, WEATHER_MAP_COLORS);
+        colors = isLibreWXR ? ApplicationSettings.getNumber(SETTINGS_LIBREWXR_COLORS, LIBREWXR_COLORS) + '' : ApplicationSettings.getString(SETTINGS_WEATHER_MAP_COLORS, WEATHER_MAP_COLORS);
     } catch (error) {
         // we moved from number to string...
         ApplicationSettings.remove(SETTINGS_WEATHER_MAP_COLORS);
     }
-    let layer = ApplicationSettings.getString(SETTINGS_WEATHER_MAP_LAYER, WEATHER_MAP_LAYER)
+    let layer = isLibreWXR ? ApplicationSettings.getString(SETTINGS_LIBREWXR_LAYER, LIBREWXR_LAYER) : ApplicationSettings.getString(SETTINGS_WEATHER_MAP_LAYER, WEATHER_MAP_LAYER);
     function updateUrl() {
         url = queryString(
             {
                 apiKey: MaptilerProvider.apiKey,
+                mapSource: ApplicationSettings.getString(SETTINGS_WEATHER_MAP_SOURCE, WEATHER_MAP_SOURCE),
+                librewxrUrl: encodeURIComponent(ApplicationSettings.getString(SETTINGS_LIBREWXR_URL, LIBREWXR_URL)),
+                snow: ApplicationSettings.getBoolean(SETTINGS_WEATHER_MAP_SHOW_SNOW, WEATHER_MAP_SHOW_SNOW),
+                forecastLabel: encodeURIComponent(lc('forecast')),
                 zoom,
                 animated,
                 animationSpeed: ApplicationSettings.getNumber(SETTINGS_WEATHER_MAP_ANIMATION_SPEED, WEATHER_MAP_ANIMATION_SPEED),
@@ -97,17 +117,19 @@
     }
 
     async function seletMapColors(event) {
-        const values = WEATHER_MAP_COLOR_SCHEMES;
-        const currentValue = ApplicationSettings.getString(SETTINGS_WEATHER_MAP_COLORS, WEATHER_MAP_COLORS);
+        const values = isLibreWXR
+            ? LIBREWXR_COLOR_SCHEMES.map((scheme) => ({ name: scheme.title, data: scheme.value + '' }))
+            : WEATHER_MAP_COLOR_SCHEMES.map((k) => ({ name: titlecase(k.replaceAll('_', ' ').toLowerCase()), data: k }));
+        const currentValue = colors;
         let selectedIndex = -1;
         const options = values.map((k, index) => {
-            const selected = currentValue === k;
+            const selected = currentValue === k.data;
             if (selected) {
                 selectedIndex = index;
             }
             return {
-                name: titlecase(k.replaceAll('_', ' ').toLowerCase()),
-                data: k,
+                name: k.name,
+                data: k.data,
                 boxType: 'circle',
                 type: 'checkbox',
                 value: selected
@@ -125,7 +147,11 @@
                         colors = item.data;
                         await saveCurrentMapParameters();
                         updateUrl();
-                        ApplicationSettings.setString(SETTINGS_WEATHER_MAP_COLORS, item.data);
+                        if (isLibreWXR) {
+                            ApplicationSettings.setNumber(SETTINGS_LIBREWXR_COLORS, parseInt(item.data, 10));
+                        } else {
+                            ApplicationSettings.setString(SETTINGS_WEATHER_MAP_COLORS, item.data);
+                        }
                     }
                 },
                 selectedIndex
@@ -134,8 +160,8 @@
     }
 
     async function selectLayer(event) {
-        const values = WEATHER_MAP_LAYERS;
-        const currentValue = ApplicationSettings.getString(SETTINGS_WEATHER_MAP_LAYER, WEATHER_MAP_LAYER);
+        const values = isLibreWXR ? LIBREWXR_LAYERS : WEATHER_MAP_LAYERS;
+        const currentValue = layer;
         let selectedIndex = -1;
         const options = values.map((k, index) => {
             const selected = currentValue === k;
@@ -162,7 +188,7 @@
                         layer = item.data;
                         await saveCurrentMapParameters();
                         updateUrl();
-                        ApplicationSettings.setString(SETTINGS_WEATHER_MAP_LAYER, item.data);
+                        ApplicationSettings.setString(isLibreWXR ? SETTINGS_LIBREWXR_LAYER : SETTINGS_WEATHER_MAP_LAYER, item.data);
                     }
                 },
                 selectedIndex
@@ -215,14 +241,18 @@
                     max: 1,
                     valueFormatter: (value) => value.toFixed(2),
                     transformValue: (value) => value
-                }
-                // {
-                //     type: 'switch',
-                //     icon: 'mdi-snowflake',
-                //     id: SETTINGS_WEATHER_MAP_SHOW_SNOW,
-                //     title: lc('show_snow'),
-                //     value: snowColors
-                // }
+                },
+                ...(isLibreWXR
+                    ? [
+                          {
+                              type: 'switch',
+                              icon: 'mdi-snowflake',
+                              id: SETTINGS_WEATHER_MAP_SHOW_SNOW,
+                              title: lc('show_snow'),
+                              value: ApplicationSettings.getBoolean(SETTINGS_WEATHER_MAP_SHOW_SNOW, WEATHER_MAP_SHOW_SNOW)
+                          }
+                      ]
+                    : [])
                 // {
                 //     icon: 'mdi-information-outline',
                 //     id: 'about',
@@ -242,15 +272,9 @@
                     width: screenWidthDips * 0.7,
                     autoSizeListItem: true
                 },
-                onCheckBox: (item, value, event) => {
+                onCheckBox: async (item, value, event) => {
                     ApplicationSettings.setBoolean(item.key || item.id, value);
-                    switch (
-                        item.id
-                        // case SETTINGS_WEATHER_MAP_SHOW_SNOW:
-                        //     snowColors = value;
-                        //     break;
-                    ) {
-                    }
+                    await saveCurrentMapParameters();
                     updateUrl();
                 },
                 onChange: debounce(async (item, value) => {

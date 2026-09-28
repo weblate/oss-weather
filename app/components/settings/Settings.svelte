@@ -70,7 +70,8 @@
     import { networkService } from '~/services/api';
     import { gadgetbridgeService } from '~/services/gadgetbridge';
     import { iconService } from '~/services/icon';
-    import { MaptilerProvider } from '~/services/providers/maptiler';
+    import { getLibreWXRSettings, getWeatherMapSourceSetting } from '~/services/providers/librewxr';
+    import { MaptilerProvider, getWeatherMapSettings } from '~/services/providers/maptiler';
     import { aqi_providers, getAqiProviderType, getProviderSettins, getProviderType, providers } from '~/services/providers/weatherproviderfactory';
     import { AVAILABLE_WEATHER_DATA, AVAILABLE_WEATHER_DATA_MAIN_HOURLY, getWeatherDataTitle, weatherDataService } from '~/services/weatherData';
     import { confirmRestartApp, createView, getDateFormatHTMLArgs, hideLoading, openLink, selectValue, showLoading, showSliderPopover } from '~/utils/ui';
@@ -547,7 +548,14 @@
                         );
                 };
             case 'map':
-                return async () => MaptilerProvider.getSettings();
+                return async () => [
+                    getWeatherMapSourceSetting(),
+                    ...getWeatherMapSettings(),
+                    { type: 'sectionheader', title: lc('librewxr') },
+                    ...getLibreWXRSettings(),
+                    { type: 'sectionheader', title: lc('maptiler') },
+                    ...MaptilerProvider.getSettings()
+                ];
             case 'geolocation':
                 return async () => [
                     {

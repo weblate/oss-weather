@@ -375,6 +375,12 @@ export function getLayerTitle(layer: string) {
         case 'temperature':
             return lc('temperature');
 
+        case 'satellite':
+            return lc('satellite');
+
+        case 'radar_satellite':
+            return lc('radar_satellite');
+
         default:
             break;
     }
@@ -462,66 +468,71 @@ export class MaptilerProvider extends WeatherProvider {
                     title: getLayerTitle(value)
                 })),
                 description: () => getLayerTitle(ApplicationSettings.getString(SETTINGS_WEATHER_MAP_LAYER, WEATHER_MAP_LAYER))
-            },
-            {
-                id: 'setting',
-                key: SETTINGS_WEATHER_MAP_ANIMATION_SPEED,
-                min: 0.1,
-                icon: 'mdi-speedometer',
-                max: 2,
-                step: null,
-                title: lc('animation_speed'),
-                type: 'slider',
-                valueFormatter: (value) => value.toFixed(2),
-                transformValue: (value) => Math.round(WEATHER_MAP_ANIMATION_SPEED / value),
-                rightValue: () => Math.round((WEATHER_MAP_ANIMATION_SPEED / ApplicationSettings.getNumber(SETTINGS_WEATHER_MAP_ANIMATION_SPEED, WEATHER_MAP_ANIMATION_SPEED)) * 100) / 100
-            },
-            {
-                id: 'setting',
-                key: SETTINGS_WEATHER_MAP_LAYER_OPACITY,
-                min: 0,
-                max: 1,
-                icon: 'mdi-circle-opacity',
-                step: null,
-                title: lc('layer_opacity'),
-                type: 'slider',
-                valueFormatter: (value) => value.toFixed(2),
-                transformValue: (value) => value,
-                rightValue: () => Math.round(ApplicationSettings.getNumber(SETTINGS_WEATHER_MAP_LAYER_OPACITY, WEATHER_MAP_LAYER_OPACITY) * 100) / 100
-            },
-            {
-                id: 'setting',
-                key: SETTINGS_WEATHER_MAP_MAX_TIME_SPAN,
-                min: 0,
-                icon: 'mdi-timelapse',
-                max: 100,
-                step: 1,
-                title: lc('maptiler_max_time_span'),
-                type: 'slider',
-                rightValue: () => ApplicationSettings.getNumber(SETTINGS_WEATHER_MAP_MAX_TIME_SPAN, 0)
-            },
-            {
-                type: 'switch',
-                icon: 'mdi-history',
-                id: SETTINGS_WEATHER_MAP_SHOW_HISTORY,
-                title: lc('maptiler_show_past_data'),
-                value: ApplicationSettings.getBoolean(SETTINGS_WEATHER_MAP_SHOW_HISTORY, true)
-            },
-            {
-                type: 'prompt',
-                icon: 'mdi-server',
-                valueType: 'string',
-                default: () => ApplicationSettings.getString(SETTINGS_WEATHER_MAP_CUSTOM_TILE_SOURCE, null),
-                id: 'setting',
-                key: SETTINGS_WEATHER_MAP_CUSTOM_TILE_SOURCE,
-                description: ApplicationSettings.getString(SETTINGS_WEATHER_MAP_CUSTOM_TILE_SOURCE, null),
-                title: lc('custom_tile_server'),
-
-                textFieldProperties: {
-                    autocapitalizationType: 'none',
-                    autocorrect: false
-                } as TextFieldProperties
             }
         ];
     }
+}
+
+export function getWeatherMapSettings() {
+    return [
+        {
+            id: 'setting',
+            key: SETTINGS_WEATHER_MAP_ANIMATION_SPEED,
+            min: 0.1,
+            icon: 'mdi-speedometer',
+            max: 2,
+            step: null,
+            title: lc('animation_speed'),
+            type: 'slider',
+            valueFormatter: (value) => value.toFixed(2),
+            transformValue: (value) => Math.round(WEATHER_MAP_ANIMATION_SPEED / value),
+            rightValue: () => Math.round((WEATHER_MAP_ANIMATION_SPEED / ApplicationSettings.getNumber(SETTINGS_WEATHER_MAP_ANIMATION_SPEED, WEATHER_MAP_ANIMATION_SPEED)) * 100) / 100
+        },
+        {
+            id: 'setting',
+            key: SETTINGS_WEATHER_MAP_LAYER_OPACITY,
+            min: 0,
+            max: 1,
+            icon: 'mdi-circle-opacity',
+            step: null,
+            title: lc('layer_opacity'),
+            type: 'slider',
+            valueFormatter: (value) => value.toFixed(2),
+            transformValue: (value) => value,
+            rightValue: () => Math.round(ApplicationSettings.getNumber(SETTINGS_WEATHER_MAP_LAYER_OPACITY, WEATHER_MAP_LAYER_OPACITY) * 100) / 100
+        },
+        {
+            id: 'setting',
+            key: SETTINGS_WEATHER_MAP_MAX_TIME_SPAN,
+            min: 0,
+            icon: 'mdi-timelapse',
+            max: 100,
+            step: 1,
+            title: lc('maptiler_max_time_span'),
+            type: 'slider',
+            rightValue: () => ApplicationSettings.getNumber(SETTINGS_WEATHER_MAP_MAX_TIME_SPAN, 0)
+        },
+        {
+            type: 'switch',
+            icon: 'mdi-history',
+            id: SETTINGS_WEATHER_MAP_SHOW_HISTORY,
+            title: lc('maptiler_show_past_data'),
+            value: ApplicationSettings.getBoolean(SETTINGS_WEATHER_MAP_SHOW_HISTORY, true)
+        },
+        {
+            type: 'prompt',
+            icon: 'mdi-server',
+            valueType: 'string',
+            default: () => ApplicationSettings.getString(SETTINGS_WEATHER_MAP_CUSTOM_TILE_SOURCE, null),
+            id: 'setting',
+            key: SETTINGS_WEATHER_MAP_CUSTOM_TILE_SOURCE,
+            description: ApplicationSettings.getString(SETTINGS_WEATHER_MAP_CUSTOM_TILE_SOURCE, null),
+            title: lc('custom_tile_server'),
+
+            textFieldProperties: {
+                autocapitalizationType: 'none',
+                autocorrect: false
+            } as TextFieldProperties
+        }
+    ];
 }

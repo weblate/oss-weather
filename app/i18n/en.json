@@ -461,5 +461,11 @@
   "weather_data_to_show_on_windy": "weather data to show in windy view",
   "max": "max",
   "maptiler_max_time_span": "max time span in hours",
-  "maptiler_show_past_data": "show past data"
+  "maptiler_show_past_data": "show past data",
+  "weather_map_source": "weather map source",
+  "librewxr": "LibreWXR",
+  "librewxr_server": "LibreWXR server",
+  "satellite": "satellite",
+  "radar_satellite": "radar + satellite",
+  "forecast": "forecast"
 }
