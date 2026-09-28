@@ -290,7 +290,7 @@ lane :build_flavor do |params|
             name: "#{app_name}(#{platform}): v#{version} Build #{versionCode}",
             tag_name: tag,
             description: githubchangelog,
-            upload_assets: Dir.glob(File.join(dist_path, platform == 'catalyst' ? "*-macOS.zip" : "*.ipa"))
+            upload_assets: Dir.glob(File.join(dist_path, platform == 'catalyst' ? "*-macOS.zip" : "#{$ios_scheme}.ipa"))
           )
         end
         upload_store(changelog:changelog, version: version, versionCode: versionCode, flavor:flavor, options:options, build_output:build_output)
@@ -430,6 +430,7 @@ platform :ios do
     if (params[:flavor] == "production")
       upload_to_app_store(
         api_key: api_key,
+        ipa: build_output['ipa'],
         ignore_language_directory_validation: true,
         metadata_path:File.join(metadata_path_realpath, "ios"),
         screenshots_path:File.join(metadata_path_realpath, "ios", "screenshots"),
@@ -450,6 +451,7 @@ platform :ios do
       )
     else
       upload_to_testflight(
+          ipa: build_output['ipa'],
           changelog:params[:changelog],
           distribute_external: true,
           groups: [params[:flavor]],
@@ -492,6 +494,16 @@ platform :ios do
         fastlane_match(type: 'appstore', api_key: api_key)
       end
       prepare(platform:'ios', options: options)
+      ipa_path = build_signed_app(output_name: "#{$ios_scheme}-store")
+      if (options[:github] != false && params[:flavor] != "appcenter")
+        # the Github build must not be a store build (no in-app purchase), so it is prepared and built again
+        prepare(platform:'ios', github: true, options: options)
+        build_signed_app(output_name: $ios_scheme)
+      end
+      {"api_key" => api_key, "ipa" => ipa_path}
+  end
+
+  private_lane :build_signed_app do |params|
       if (ENV["GITHUB_ACTIONS"] == 'true')
       #    # automatic code signing
         update_code_signing_settings(
@@ -512,6 +524,7 @@ platform :ios do
         export_xcargs: '-allowProvisioningUpdates',
         xcargs: "-allowProvisioningUpdates",
         output_directory:"dist",
+        output_name: params[:output_name],
         scheme: $ios_scheme,
         workspace: File.join(project_root_path, app_build_path, "ios", "#{$ios_scheme}.xcworkspace"),
         export_method: "app-store",
@@ -519,7 +532,6 @@ platform :ios do
           provisioningProfiles: lane_context[SharedValues::MATCH_PROVISIONING_PROFILE_MAPPING]
         }
       )
-      {"api_key" => api_key}
   end
 
   desc 'Ship iOS build to Testflight.'
