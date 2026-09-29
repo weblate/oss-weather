@@ -614,8 +614,9 @@ platform :mac do
       archive_path = File.join(project_root_path, app_build_path, "catalyst", "build", "#{$ios_scheme}.xcarchive")
       # same overrides as `ns build catalyst`: the runtime template only sets SUPPORTS_UIKITFORMAC
       # and Catalyst needs iOS 13.1+. Hardened runtime is required for notarization.
-      # arm64 only: the NativeScript runtime has no x86_64 Mac Catalyst slice, so target macOS 11 (iOS 14).
-      xcargs = "ARCHS=arm64 SUPPORTS_MACCATALYST=YES DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER=NO IPHONEOS_DEPLOYMENT_TARGET=14.0 MACCATALYST_DEPLOYMENT_TARGET=14.0 ENABLE_HARDENED_RUNTIME=YES"
+      # arm64 only: the NativeScript runtime has no x86_64 Mac Catalyst slice, and the App Store
+      # only accepts arm64-only apps targeting macOS 12+ (Catalyst 15.0).
+      xcargs = "ARCHS=arm64 SUPPORTS_MACCATALYST=YES DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER=NO IPHONEOS_DEPLOYMENT_TARGET=15.0 MACCATALYST_DEPLOYMENT_TARGET=15.0 ENABLE_HARDENED_RUNTIME=YES"
 
       prepare(platform:'catalyst', options: options)
       update_code_signing_settings(
