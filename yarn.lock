@@ -2938,7 +2938,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nativescript-community/ui-canvas@npm:4.6.52, @nativescript-community/ui-canvas@npm:^4.6.46, @nativescript-community/ui-canvas@npm:^4.6.52":
+"@nativescript-community/ui-canvas@npm:4.6.53, @nativescript-community/ui-canvas@npm:^4.6.53":
+  version: 4.6.53
+  resolution: "@nativescript-community/ui-canvas@npm:4.6.53"
+  dependencies:
+    "@nativescript-community/arraybuffers": "npm:^1.1.5"
+  checksum: 10/f4da6c829667e117514f1897344b71cf4e07912aeb66323d65fd2721510a3c7ba3a197fb86fb6516249876426d37a00971a32f0107cac3d158ff7b781d687344
+  languageName: node
+  linkType: hard
+
+"@nativescript-community/ui-canvas@npm:^4.6.46":
   version: 4.6.52
   resolution: "@nativescript-community/ui-canvas@npm:4.6.52"
   dependencies:
@@ -2947,13 +2956,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nativescript-community/ui-canvaslabel@npm:1.2.55":
-  version: 1.2.55
-  resolution: "@nativescript-community/ui-canvaslabel@npm:1.2.55"
+"@nativescript-community/ui-canvaslabel@npm:1.2.56":
+  version: 1.2.56
+  resolution: "@nativescript-community/ui-canvaslabel@npm:1.2.56"
   dependencies:
     "@nativescript-community/text": "npm:^1.6.24"
-    "@nativescript-community/ui-canvas": "npm:^4.6.52"
-  checksum: 10/501a34bd34f5df7dc0ea80d4605145a75220abfa1ac47d55104dc3f6299b14febd00d29cda607f085c63ecdb1d6c0bab93bb299e9fab1ef3d7e5fd354b1cfdd3
+    "@nativescript-community/ui-canvas": "npm:^4.6.53"
+  checksum: 10/d096fe057ae0942ca0b8b9d217116506fae8a464b8fe35cbdb2a2ceb59aa445953a213f07f054f1726af95951608b0c2998728dac9b2b7eb158be52bafc66c48
   languageName: node
   linkType: hard
 
@@ -13388,8 +13397,8 @@ __metadata:
     "@nativescript-community/svelte-native": "npm:1.0.32"
     "@nativescript-community/systemui": "npm:1.1.25"
     "@nativescript-community/text": "npm:1.6.25"
-    "@nativescript-community/ui-canvas": "npm:4.6.52"
-    "@nativescript-community/ui-canvaslabel": "npm:1.2.55"
+    "@nativescript-community/ui-canvas": "npm:4.6.53"
+    "@nativescript-community/ui-canvaslabel": "npm:1.2.56"
     "@nativescript-community/ui-chart": "npm:2.0.30"
     "@nativescript-community/ui-checkbox": "npm:2.0.18"
     "@nativescript-community/ui-collectionview": "npm:6.0.29"
