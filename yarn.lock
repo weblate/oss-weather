@@ -3209,10 +3209,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nativescript/android-quickjs-ng@npm:9.0.0-alpha.3":
-  version: 9.0.0-alpha.3
-  resolution: "@nativescript/android-quickjs-ng@npm:9.0.0-alpha.3"
-  checksum: 10/f931f22a55fbca6732346fa9d9e392d3f73cca0c4dd3ec62a77c7a7224533bed6c9ce7372d9270a1b4a0622b874a265bfbbd225058e4edaa0170f5078db30a73
+"@nativescript/android-quickjs-ng@npm:9.0.0-alpha.4":
+  version: 9.0.0-alpha.4
+  resolution: "@nativescript/android-quickjs-ng@npm:9.0.0-alpha.4"
+  checksum: 10/20cb906c50fbdb3e3e9ba726c424cd2285025ebd2d1e87b8cd4fc196a68ddf4f55dc7c5017979ee02f33c94aa2eed834572059f2ea570021db1c46018f84b6e1
   languageName: node
   linkType: hard
 
@@ -13425,7 +13425,7 @@ __metadata:
     "@nativescript-community/ui-webview": "npm:1.6.2"
     "@nativescript-community/ui-zoomimage": "npm:4.6.20"
     "@nativescript-community/universal-links": "npm:3.0.2"
-    "@nativescript/android-quickjs-ng": "npm:9.0.0-alpha.3"
+    "@nativescript/android-quickjs-ng": "npm:9.0.0-alpha.4"
     "@nativescript/core": "npm:~9.0.20"
     "@nativescript/ios": "npm:9.1.0"
     "@nativescript/iqkeyboardmanager": "npm:2.1.2"
