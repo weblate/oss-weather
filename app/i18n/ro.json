@@ -51,6 +51,7 @@
     "be_vigilant": "Fi vigilent",
     "betula": "mesteacăn",
     "blocks": "blocuri",
+    "bold_clock": "ceas bold",
     "bug_report_sent": "Raport eroare (bug) trimis",
     "cancel": "Anulează",
     "chart": "grafic",
@@ -58,5 +59,11 @@
     "charts_landscape": "forțează graficele să fie arătate în modul peisaj (landscape)",
     "clear": "Curăță",
     "clock_24": "Folosește formatul 24-ore",
+    "close": "Închide",
+    "cloudy": "Înnorat",
+    "color_theme": {
+        "default": "prestabilit",
+        "dynamic": "culori dinamice"
+    },
     "owm_api_key_required_description": "Creează un cont OpenWeather pentru a primi o cheie API gratuită necesară pentru a primi date despre vreme.\nAceastă aplicație are una dar pentru a sta în limitele planului gratis, fiecare utilizator trebuie să creeze propria cheie API."
 }
