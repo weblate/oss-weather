@@ -1,0 +1,8 @@
+Bug fixes:
+- use build_app and drop the removed notarize bundle_id option
+- sign pods ad-hoc for Mac Catalyst
+- declare the weather app category for the Mac App Store
+- target macOS 12 so arm64-only builds pass App Store validation
+- keep source maps out of production app bundles
+- crash on menu
+- Translations update
