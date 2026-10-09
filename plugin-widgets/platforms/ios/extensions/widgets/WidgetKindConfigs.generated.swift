@@ -20,19 +20,31 @@ class WidgetKindConfigs {
     static func getDefaultSettings(widgetKind: String) -> [String: Any]? {
         switch widgetKind {
         case "DailyWeatherWidget":
-            return nil
+            return [
+                "showChips": true
+            ]
         case "ForecastWeatherWidget":
-            return nil
+            return [
+                "showChips": true
+            ]
         case "HourlyWeatherWidget":
             return nil
         case "SimpleWeatherWidget":
-            return nil
+            return [
+                "showChips": true
+            ]
         case "SimpleWeatherWithClockWidget":
             return [
-                "clockBold": true
+                "clockBold": false,
+                "showHourly": false,
+                "showChips": true
             ]
         case "SimpleWeatherWithDateWidget":
-            return nil
+            return [
+                "clockBold": false,
+                "showHourly": false,
+                "showChips": true
+            ]
         default:
             return nil
         }

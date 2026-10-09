@@ -1,15 +1,22 @@
 // app/services/widgets/shared/WidgetDataManager.ts
 // Shared logic for fetching and formatting widget data (used by both Android and iOS)
 
-import { ApplicationSettings, path } from '@nativescript/core';
-import { SETTINGS_WEATHER_LOCATION } from '~/helpers/constants';
-import { formatDate, formatTime } from '~/helpers/locale';
-import { WeatherLocation } from '~/services/api';
+import { ApplicationSettings, Color, path } from '@nativescript/core';
+import { ALWAYS_SHOW_PRECIP_PROB, DATA_INTENSITY, SETTINGS_ALWAYS_SHOW_PRECIP_PROB, SETTINGS_DATA_INTENSITY, SETTINGS_WEATHER_LOCATION } from '~/helpers/constants';
+import { clock_24, formatDate, formatTime, getStartOfDay, lc } from '~/helpers/locale';
+import { WeatherLocation, prepareItems } from '~/services/api';
 import { iconService, iconThemesFolder } from '~/services/icon';
-import { WeatherData } from '~/services/providers/weather';
+import { CommonWeatherData, WeatherData } from '~/services/providers/weather';
 import { getWeather } from '~/services/providers/weatherproviderfactory';
-import { WeatherProps, formatWeatherValue } from '~/services/weatherData';
-import { ForecastData, WeatherWidgetData, WidgetConfig } from './WidgetTypes';
+import { CommonData, WeatherProps, formatWeatherValue, weatherDataService } from '~/services/weatherData';
+import { modernDataColor, windSpeedColor } from '~/utils/designStyle';
+import { curvePositions, rangePositions } from '~/utils/widgetCurve';
+import { widgetChip } from '~/utils/widgetChips';
+import { upcomingDays } from '~/utils/widgetDays';
+import { precipBars, precipTexts } from '~/utils/widgetPrecip';
+import { splitValueUnit } from '~/utils/valueUnit';
+import { renderWidgetIcon } from './WidgetIcons';
+import { ForecastData, WeatherWidgetData, WidgetChip, WidgetConfig } from './WidgetTypes';
 import { queryTimezone } from '~/helpers/favorites';
 
 export function isDefaultLocation(locationName: string) {
@@ -69,9 +76,16 @@ export class WidgetDataManager {
         if (!weatherData) {
             return;
         }
+        // the saved current location can miss its timezone: fall back to the device one
+        const startOfDay = getStartOfDay(Date.now(), location.timezoneOffset ?? -new Date().getTimezoneOffset()).valueOf();
+        const upcoming = upcomingDays(weatherData.daily?.data ?? [], startOfDay);
         // Format current weather
         const formattedData: WeatherWidgetData = {
             temperature: formatWeatherValue(weatherData.currently, WeatherProps.temperature),
+            temperatureHigh: upcoming[0] ? formatWeatherValue(upcoming[0], WeatherProps.temperatureMax) : '',
+            temperatureLow: upcoming[0] ? formatWeatherValue(upcoming[0], WeatherProps.temperatureMin) : '',
+            // the app current item: current weather mixed with the hour and the day data, like the app card
+            chips: this.chips(prepareItems(location, weatherData)[0] ?? weatherData.currently, 'currently'),
             iconPath: this.getIconPath(weatherData.currently.iconId, weatherData.currently.isDay, config.iconSet),
             description: weatherData.currently?.description || '',
             locationName: location.name || '',
@@ -84,7 +98,14 @@ export class WidgetDataManager {
 
         // Format hourly data (next 24 hours)
         if (weatherData.hourly?.length > 0) {
-            formattedData.hourlyData = weatherData.hourly.slice(0, 24).map((hour) => ({
+            const hours = weatherData.hourly.slice(0, 24);
+            const curve = curvePositions(hours.map((hour) => hour.temperature));
+            formattedData.hourlyData = hours.map((hour, index) => ({
+                // short hour label like the app hourly card ("Now", "18" / "6PM")
+                hour: index === 0 ? lc('now') : formatTime(hour.time, clock_24 ? 'HH' : 'hA'),
+                curve: curve[index],
+                ...this.precipitation(hour),
+                wind: this.windChip(hour),
                 time: this.formatTime(hour.time),
                 temperature: formatWeatherValue(hour, WeatherProps.temperature),
                 iconPath: this.getIconPath(hour.iconId, hour.isDay, config.iconSet),
@@ -95,9 +116,20 @@ export class WidgetDataManager {
         }
 
         // Format daily data (next 7 days)
-        if (weatherData.daily?.data && weatherData.daily.data.length > 0) {
-            formattedData.dailyData = weatherData.daily.data.slice(0, 7).map((day) => ({
+        if (upcoming.length > 0) {
+            const days = upcoming.slice(0, 7);
+            const ranges = rangePositions(
+                days.map((day) => day.temperatureMin),
+                days.map((day) => day.temperatureMax)
+            );
+            formattedData.dailyData = days.map((day, index) => ({
+                rangeStart: ranges[index].start,
+                rangeEnd: ranges[index].end,
+                precipChips: [this.chip(weatherDataService.getItemData(WeatherProps.precipAccumulation, day, 'daily'))].filter((chip) => !!chip),
                 day: this.formatDayName(day.time),
+                date: formatDate(day.time, 'DD/MM'),
+                description: day.description || '',
+                chips: this.chips(day, 'daily'),
                 temperatureHigh: formatWeatherValue(day, WeatherProps.temperatureMax),
                 temperatureLow: formatWeatherValue(day, WeatherProps.temperatureMin),
                 iconPath: this.getIconPath(day.iconId, day.isDay, config.iconSet),
@@ -124,8 +156,8 @@ export class WidgetDataManager {
         }
 
         // Add next 4 days from daily
-        if (weatherData.daily?.data) {
-            weatherData.daily.data.slice(1, 5).forEach((day) => {
+        if (upcoming.length) {
+            upcoming.slice(1, 5).forEach((day) => {
                 forecastData.push({
                     dateTime: this.formatDateTime(day.time),
                     temperature: formatWeatherValue(day, WeatherProps.temperature),
@@ -140,6 +172,41 @@ export class WidgetDataManager {
         formattedData.forecastData = forecastData;
         // DEV_LOG && console.log('formatWeatherDataForWidget', JSON.stringify(forecastData));
         return formattedData;
+    }
+
+    // the shown weather data of an item as chips, like the app (data, order, thresholds and intensity settings)
+    private chips(item: CommonWeatherData, type: 'currently' | 'daily'): WidgetChip[] {
+        return weatherDataService
+            .getIconsData({ item, type, filter: [WeatherProps.windBearing] })
+            .map((data) => this.chip(data))
+            .filter((chip) => !!chip);
+    }
+
+    // precipitation bars and texts like the app hourly item
+    private precipitation(hour: CommonWeatherData) {
+        const texts = precipTexts(hour.precipProbability, hour.precipAccumulation, ApplicationSettings.getBoolean(SETTINGS_ALWAYS_SHOW_PRECIP_PROB, ALWAYS_SHOW_PRECIP_PROB));
+        return {
+            precipBars: precipBars(hour),
+            precipAmount: texts.amount ? splitValueUnit(formatWeatherValue(hour, WeatherProps.precipAccumulation)).amount : '',
+            precipProbability: texts.probability ? formatWeatherValue(hour, WeatherProps.precipProbability) : ''
+        };
+    }
+
+    // wind icon colored by the gust strength, like the app hourly icons
+    private windChip(hour: CommonWeatherData) {
+        const data = weatherDataService.getItemData(WeatherProps.windSpeed, hour, 'hourly');
+        return data && this.chip({ ...data, iconColor: windSpeedColor(hour.windGust ?? hour.windSpeed, modernDataColor(WeatherProps.windSpeed)) });
+    }
+
+    private chip(data: CommonData) {
+        if (!data || data.value === undefined || data.value === null) {
+            return undefined;
+        }
+        const toHex = (value: string | Color) => (value instanceof Color ? value.hex : new Color(value).hex);
+        const color = data.color ? toHex(data.color) : undefined;
+        const iconColor = data.iconColor ? toHex(data.iconColor) : color || modernDataColor(data.key) || '#888780';
+        const iconPath = renderWidgetIcon(data.icon, data.paint?.fontFamily, iconColor);
+        return widgetChip({ ...data, color }, iconPath, ApplicationSettings.getBoolean(SETTINGS_DATA_INTENSITY, DATA_INTENSITY));
     }
 
     private getIconPath(iconId: number, isDay: boolean, iconSet: string): string {

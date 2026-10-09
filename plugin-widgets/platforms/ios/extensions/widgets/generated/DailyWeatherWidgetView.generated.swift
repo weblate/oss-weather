@@ -14,87 +14,158 @@ struct DailyWeatherWidgetView: View {
             let width = geometry.size.width
             let height = geometry.size.height
             let config = entry.config ?? WidgetConfig()
+            let widgetColor = (entry.config.settings["color"] as? String == nil ? WidgetColorProvider.onSurface : entry.config.settings["color"] as? String as? String).flatMap { Color(UIColor(hexString: $0)) } ?? WidgetColorProvider.onSurface
             
             if let data = entry.data, entry.data?.loadingState == WeatherWidgetData.LoadingState.loaded {
-                WidgetContainer(padding: 8) {
-                    VStack(alignment: .leading, spacing: 0) {
-                        HStack(alignment: .top, spacing: 0) {
-                            VStack(alignment: .leading, spacing: 0) {
+                WidgetContainer(padding: 0) {
+                    if (width >= 250 && height < 170) {
+                        VStack(alignment: .center, spacing: 0) {
+                            HStack(alignment: .center, spacing: 0) {
                                 Text(data.locationName)
-                                    .font(.system(size: 12, weight: .regular))
-                                    .foregroundColor(WidgetColorProvider.onSurface)
-                                    .multilineTextAlignment(.leading)
-                                    .lineLimit(1).opacity(0.6)
+                                    .font(.system(size: 13, weight: .medium))
+                                    .foregroundColor(widgetColor)
+                                    .lineLimit(1).layoutPriority(1)
                                 Text(data.temperature)
-                                    .font(.system(size: 26, weight: .bold))
-                                    .foregroundColor(WidgetColorProvider.onSurface)
-                            }
-                            Spacer()
-                            VStack(alignment: .trailing, spacing: 0) {
-                                if !data.iconPath.isEmpty {
-                                    WeatherIconView(data.iconPath, description: data.description, size: 54)
-                                }
-                                if !data.description.isEmpty {
-                                    Text(data.description)
-                                        .font(.system(size: 11, weight: .regular))
-                                        .foregroundColor(WidgetColorProvider.onSurface)
-                                        .multilineTextAlignment(.trailing)
-                                        .lineLimit(1).opacity(0.6)
-                                }
-                            }
-                        }.frame(maxWidth: .infinity).padding(8)
-                        VStack(alignment: .leading, spacing: 0) {
-                            Text("daily")
-                                .font(.system(size: 12, weight: .medium))
-                                .foregroundColor(WidgetColorProvider.onSurface)
-                                .multilineTextAlignment(.leading).padding(.horizontal, 8).opacity(0.6)
-                        }.frame(maxWidth: .infinity)
-                        Spacer().frame(height: 4)
-                        ScrollView(.vertical, showsIndicators: false) {
-                            VStack(spacing: 8) {
-                                VStack(alignment: .center, spacing: 0) {
-                                    ForEach(Array(data.dailyData.prefix(10).enumerated()), id: \.offset) { index, item in
-                                        VStack(alignment: .center, spacing: 0) {
+                                    .font(.system(size: 13, weight: .regular))
+                                    .foregroundColor(widgetColor)
+                                    .lineLimit(1)
+                                Spacer().frame(width: 4)
+                                Text(data.description)
+                                    .font(.system(size: 12, weight: .regular))
+                                    .foregroundColor(widgetColor)
+                                    .lineLimit(1).opacity(0.6)
+                            }.frame(maxWidth: .infinity).padding(.bottom, 6)
+                            HStack(alignment: .center, spacing: 0) {
+                                ForEach(Array(data.dailyData.prefix(width >= 340 ? 5 : 4).enumerated()), id: \.offset) { index, item in
+                                    VStack(alignment: .center, spacing: 0) {
+                                        Text(item.day)
+                                            .font(.system(size: 13, weight: .medium))
+                                            .foregroundColor(widgetColor)
+                                            .lineLimit(1)
+                                        Spacer().frame(height: 2)
+                                        WeatherIconView(item.iconPath, description: data.description, size: 26)
+                                        Spacer().frame(height: 2)
+                                        HStack(alignment: .center, spacing: 0) {
+                                            Text(item.temperatureLow)
+                                                .font(.system(size: 13, weight: .regular))
+                                                .foregroundColor(widgetColor)
+                                                .lineLimit(1).opacity(0.6)
+                                            Spacer().frame(width: 4)
+                                            Text(item.temperatureHigh)
+                                                .font(.system(size: 13, weight: .medium))
+                                                .foregroundColor(widgetColor)
+                                                .lineLimit(1)
+                                        }
+                                        Spacer().frame(height: 3)
+                                        if entry.config.settings["showChips"] as? Bool != false {
+                                            WidgetChipsView(chips: item.precipChips, color: widgetColor, fontSize: 11, iconSize: 11, spacing: 4, limit: 1, maxWidth: ((width - 24) / width >= 340 ? 5 : 4), maxRows: 1)
+                                        }
+                                        else {
                                             VStack(alignment: .center, spacing: 0) {
-                                                HStack(alignment: .center, spacing: 0) {
-                                                    Text(item.day)
-                                                        .font(.system(size: 12, weight: .medium))
-                                                        .foregroundColor(WidgetColorProvider.onSurface)
-                                                        .lineLimit(1)
-                                                    Spacer()
-                                                    WeatherIconView(item.iconPath, description: data.description, size: 36)
-                                                    Spacer()
-                                                    VStack(alignment: .trailing, spacing: 0) {
-                                                        HStack(alignment: .center, spacing: 6) {
-                                                            Text(item.temperatureHigh)
-                                                                .font(.system(size: 13, weight: .bold))
-                                                                .foregroundColor(WidgetColorProvider.onSurface)
-                                                                .lineLimit(1)
-                                                            Text(item.temperatureLow)
-                                                                .font(.system(size: 11, weight: .regular))
-                                                                .foregroundColor(WidgetColorProvider.onSurface)
-                                                                .lineLimit(1).opacity(0.6)
-                                                        }
-                                                        HStack(alignment: .center, spacing: 6) {
-                                                            if !item.precipAccumulation.isEmpty {
-                                                                Text(item.precipAccumulation)
-                                                                    .font(.system(size: 10, weight: .regular))
-                                                                    .foregroundColor(WidgetColorProvider.onSurface).opacity(0.6)
-                                                            }
-                                                            if !item.precipitation.isEmpty {
-                                                                Text("💧" + item.precipitation)
-                                                                    .font(.system(size: 10, weight: .regular))
-                                                                    .foregroundColor(WidgetColorProvider.onSurface).opacity(0.6)
-                                                            }
-                                                        }
+                                            }
+                                        }
+                                    }.layoutPriority(1)
+                                }
+                            }.frame(maxWidth: .infinity)
+                        }.frame(maxWidth: .infinity, maxHeight: .infinity).padding(.horizontal, 12).padding(.vertical, 10)
+                    }
+                    else {
+                        VStack(alignment: .center, spacing: 0) {
+                            HStack(alignment: .center, spacing: 0) {
+                                Text(data.locationName)
+                                    .font(.system(size: 13, weight: .medium))
+                                    .foregroundColor(widgetColor)
+                                    .lineLimit(1).layoutPriority(1)
+                                Text(data.temperature)
+                                    .font(.system(size: 13, weight: .regular))
+                                    .foregroundColor(widgetColor)
+                                    .lineLimit(1)
+                                Spacer().frame(width: 4)
+                                Text(data.description)
+                                    .font(.system(size: 12, weight: .regular))
+                                    .foregroundColor(widgetColor)
+                                    .lineLimit(1).opacity(0.6)
+                            }.frame(maxWidth: .infinity).padding(.bottom, 6)
+                            ForEach(Array(data.dailyData.prefix(height >= 394 ? 8 : height >= 351 ? 7 : height >= 308 ? 6 : height >= 265 ? 5 : height >= 222 ? 4 : height >= 179 ? 3 : 2).enumerated()), id: \.offset) { index, item in
+                                if width < 250 {
+                                    HStack(alignment: .center, spacing: 0) {
+                                        WeatherIconView(item.iconPath, description: data.description, size: 22)
+                                        Spacer().frame(width: 6)
+                                        Text(item.day)
+                                            .font(.system(size: 13, weight: .medium))
+                                            .foregroundColor(widgetColor)
+                                            .lineLimit(1)
+                                        Spacer().frame(width: 4)
+                                        Text(item.date)
+                                            .font(.system(size: 11, weight: .regular))
+                                            .foregroundColor(widgetColor)
+                                            .lineLimit(1).layoutPriority(1).opacity(0.6)
+                                        HStack(alignment: .center, spacing: 0) {
+                                            Text(item.temperatureLow)
+                                                .font(.system(size: 13, weight: .regular))
+                                                .foregroundColor(widgetColor)
+                                                .lineLimit(1).opacity(0.6)
+                                            Spacer().frame(width: 4)
+                                            Text(item.temperatureHigh)
+                                                .font(.system(size: 13, weight: .medium))
+                                                .foregroundColor(widgetColor)
+                                                .lineLimit(1)
+                                        }
+                                    }.frame(maxWidth: .infinity).padding(.vertical, 3)
+                                }
+                                else {
+                                    HStack(alignment: .center, spacing: 0) {
+                                        WeatherIconView(item.iconPath, description: data.description, size: 24)
+                                        Spacer().frame(width: 8)
+                                        VStack(alignment: .center, spacing: 0) {
+                                            HStack(alignment: .center, spacing: 0) {
+                                                Text(item.day)
+                                                    .font(.system(size: 14, weight: .medium))
+                                                    .foregroundColor(widgetColor)
+                                                    .lineLimit(1)
+                                                Spacer().frame(width: 4)
+                                                Text(item.date)
+                                                    .font(.system(size: 12, weight: .regular))
+                                                    .foregroundColor(widgetColor)
+                                                    .lineLimit(1).opacity(0.6)
+                                                Spacer().frame(width: 6)
+                                                if entry.config.settings["showChips"] as? Bool != false {
+                                                    WidgetChipsView(chips: item.chips, color: widgetColor, fontSize: 11, iconSize: 12, spacing: 3, limit: 3, maxWidth: (width - 222), maxRows: 1)
+                                                }
+                                                else {
+                                                    VStack(alignment: .center, spacing: 0) {
                                                     }
-                                                }.frame(maxWidth: .infinity)
-                                            }.frame(maxWidth: .infinity).padding(.horizontal, 6).padding(.vertical, 2).background(WidgetColorProvider.surfaceVariant).cornerRadius(8)
-                                        }.frame(maxWidth: .infinity).padding(2)
-                                    }
+                                                }
+                                            }
+                                            Text(item.description)
+                                                .font(.system(size: 12, weight: .regular))
+                                                .foregroundColor(widgetColor)
+                                                .lineLimit(1).opacity(0.6)
+                                        }.layoutPriority(1)
+                                        Text(item.temperatureLow)
+                                            .font(.system(size: 13, weight: .regular))
+                                            .foregroundColor(widgetColor)
+                                            .lineLimit(1).opacity(0.6)
+                                        Spacer().frame(width: 5)
+                                        ZStack {
+                                            HStack(alignment: .center, spacing: 0) {
+                                            }.frame(width: 30).frame(height: 3).background(WidgetColorProvider.surfaceVariant).cornerRadius(2)
+                                            HStack(alignment: .center, spacing: 0) {
+                                                Spacer().frame(width: (item.rangeStart * 30))
+                                                HStack(alignment: .center, spacing: 0) {
+                                                }.frame(height: 3).background(Color(hex: "#EF9F27")).cornerRadius(2)
+                                            }.frame(height: 3)
+                                        }.frame(width: 30).frame(height: 3)
+                                        Spacer().frame(width: 5)
+                                        Text(item.temperatureHigh)
+                                            .font(.system(size: 14, weight: .medium))
+                                            .foregroundColor(widgetColor)
+                                            .multilineTextAlignment(.trailing)
+                                            .lineLimit(1).frame(width: 30)
+                                    }.frame(maxWidth: .infinity).padding(.vertical, 4)
                                 }
                             }
-                        }
+                        }.frame(maxWidth: .infinity, maxHeight: .infinity).padding(.horizontal, 14).padding(.vertical, 10)
                     }
                 }
             } else {

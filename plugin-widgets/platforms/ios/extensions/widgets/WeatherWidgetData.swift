@@ -15,6 +15,10 @@ struct WeatherWidgetData: Codable {
     let errorMessage: String?
     let hourlyData: [HourlyData]
     let dailyData: [DailyData]
+    // today's range and the shown weather data as chips (computed by the app)
+    var temperatureHigh: String? = nil
+    var temperatureLow: String? = nil
+    var chips: [WidgetChip]? = nil
     
     enum LoadingState: String, Codable {
         case none
@@ -53,24 +57,60 @@ struct HourlyData: Codable, Identifiable {
     let iconPath: String?
     let description: String
     let precipAccumulation: String
+    // precipitation probability, temperature curve height (0 lowest - 1 highest), precipitation bars, amount
+    // and probability like the app hourly item ("" when hidden), wind chip
+    var precipitation: String = ""
+    var curve: Double = 0.5
+    var precipBars: [PrecipBar] = []
+    var precipAmount: String = ""
+    var precipProbability: String = ""
+    var wind: WidgetChip = WidgetChip()
     
     // Coding keys for JSON serialization
     enum CodingKeys: String, CodingKey {
         case hour
+        case time
         case temperature
         case iconPath
         case description
         case precipAccumulation
+        case precipitation
+        case curve
+        case precipBars
+        case precipAmount
+        case precipProbability
+        case wind
     }
     
-    // Automatic decoding with defaults
+    // Automatic decoding with defaults (the app sends the hour as "time")
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        hour = try container.decode(String.self, forKey: .hour)
+        hour = try container.decodeIfPresent(String.self, forKey: .hour) ?? container.decodeIfPresent(String.self, forKey: .time) ?? ""
         temperature = try container.decode(String.self, forKey: .temperature)
         iconPath = try container.decodeIfPresent(String.self, forKey: .iconPath)
         description = try container.decodeIfPresent(String.self, forKey: .description) ?? ""
         precipAccumulation = try container.decodeIfPresent(String.self, forKey: .precipAccumulation) ?? ""
+        precipitation = try container.decodeIfPresent(String.self, forKey: .precipitation) ?? ""
+        curve = try container.decodeIfPresent(Double.self, forKey: .curve) ?? 0.5
+        precipBars = try container.decodeIfPresent([PrecipBar].self, forKey: .precipBars) ?? []
+        precipAmount = try container.decodeIfPresent(String.self, forKey: .precipAmount) ?? ""
+        precipProbability = try container.decodeIfPresent(String.self, forKey: .precipProbability) ?? ""
+        wind = try container.decodeIfPresent(WidgetChip.self, forKey: .wind) ?? WidgetChip()
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(hour, forKey: .hour)
+        try container.encode(temperature, forKey: .temperature)
+        try container.encodeIfPresent(iconPath, forKey: .iconPath)
+        try container.encode(description, forKey: .description)
+        try container.encode(precipAccumulation, forKey: .precipAccumulation)
+        try container.encode(precipitation, forKey: .precipitation)
+        try container.encode(curve, forKey: .curve)
+        try container.encode(precipBars, forKey: .precipBars)
+        try container.encode(precipAmount, forKey: .precipAmount)
+        try container.encode(precipProbability, forKey: .precipProbability)
+        try container.encode(wind, forKey: .wind)
     }
     
     // Manual initializer for convenience
@@ -100,9 +140,19 @@ struct DailyData: Codable, Identifiable {
     let precipitation: String
     let windSpeed: String
     let precipAccumulation: String
+    var date: String = ""
+    var chips: [WidgetChip] = []
+    var precipChips: [WidgetChip] = []
+    var rangeStart: Double = 0
+    var rangeEnd: Double = 1
     
     enum CodingKeys: String, CodingKey {
         case day
+        case date
+        case chips
+        case precipChips
+        case rangeStart
+        case rangeEnd
         case temperatureHigh
         case temperatureLow
         case iconPath
@@ -123,6 +173,11 @@ struct DailyData: Codable, Identifiable {
         precipitation = try container.decodeIfPresent(String.self, forKey: .precipitation) ?? ""
         windSpeed = try container.decodeIfPresent(String.self, forKey: .windSpeed) ?? ""
         precipAccumulation = try container.decodeIfPresent(String.self, forKey: .precipAccumulation) ?? ""
+        date = try container.decodeIfPresent(String.self, forKey: .date) ?? ""
+        chips = try container.decodeIfPresent([WidgetChip].self, forKey: .chips) ?? []
+        precipChips = try container.decodeIfPresent([WidgetChip].self, forKey: .precipChips) ?? []
+        rangeStart = try container.decodeIfPresent(Double.self, forKey: .rangeStart) ?? 0
+        rangeEnd = try container.decodeIfPresent(Double.self, forKey: .rangeEnd) ?? 1
     }
     
     // Manual initializer for convenience
@@ -145,6 +200,24 @@ struct DailyData: Codable, Identifiable {
         self.windSpeed = windSpeed
         self.precipAccumulation = precipAccumulation
     }
+}
+
+// MARK: - Weather data chip (computed by the app): icon png, value, unit, intensity tint and probability bar
+struct WidgetChip: Codable, Hashable {
+    var iconPath: String = ""
+    var value: String = ""
+    var unit: String = ""
+    var tint: String = ""
+    var barFraction: Double = 0
+    var barColor: String = ""
+}
+
+// a precipitation bar of an hour column: horizontal part (0-1), top as a fraction of the height, #rrggbbaa color
+struct PrecipBar: Codable, Hashable {
+    var start: Double = 0
+    var end: Double = 1
+    var top: Double = 1
+    var color: String = ""
 }
 
 // MARK: - Forecast Data

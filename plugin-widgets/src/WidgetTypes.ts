@@ -2,6 +2,10 @@
 // Shared types and interfaces for both Android and iOS widgets
 
 import { ProviderType } from '~/services/providers/weather';
+import type { WidgetChip } from '~/utils/widgetChips';
+import type { PrecipBar } from '~/utils/widgetPrecip';
+export type { WidgetChip } from '~/utils/widgetChips';
+export type { PrecipBar } from '~/utils/widgetPrecip';
 
 export interface WidgetConfig {
     locationName: string;
@@ -18,6 +22,10 @@ export interface WidgetConfig {
 
 export interface WeatherWidgetData {
     temperature: string;
+    // today's range, and the shown weather data as chips (app settings: data, order, intensity)
+    temperatureHigh?: string;
+    temperatureLow?: string;
+    chips?: WidgetChip[];
     iconPath: string;
     description: string;
     locationName: string;
@@ -35,10 +43,27 @@ export interface HourlyData {
     precipitation: string;
     precipAccumulation: string;
     windSpeed: string;
+    // short hour label ("Now", "18")
+    hour?: string;
+    // temperature curve height (0 lowest - 1 highest of the shown hours)
+    curve?: number;
+    // precipitation bars, amount (without unit) and probability like the app hourly item ('' when hidden)
+    precipBars?: PrecipBar[];
+    precipAmount?: string;
+    precipProbability?: string;
+    wind?: WidgetChip;
 }
 
 export interface DailyData {
     day: string;
+    date?: string;
+    description?: string;
+    chips?: WidgetChip[];
+    // the precipitation chip alone (daily columns)
+    precipChips?: WidgetChip[];
+    // min / max on the range of the shown days (0-1), for the range bar
+    rangeStart?: number;
+    rangeEnd?: number;
     temperatureHigh: string;
     temperatureLow: string;
     iconPath: string;

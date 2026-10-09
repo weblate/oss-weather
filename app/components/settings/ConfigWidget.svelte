@@ -4,7 +4,7 @@
     import { modernColors } from '~/helpers/modernTheme';
     import { showError } from '@shared/utils/showError';
     import { showModal } from '@shared/utils/svelte/ui';
-    import { WIDGET_NAMES, WeatherWidgetData, WidgetConfig, WidgetConfigManager, isDefaultLocation, widgetService } from 'plugin-widgets';
+    import { WIDGET_NAMES, WeatherWidgetData, WidgetConfig, WidgetConfigManager, WidgetDataManager, isDefaultLocation, widgetService } from 'plugin-widgets';
     import { onMount } from 'svelte';
     import CActionBar from '~/components/common/CActionBar.svelte';
     import ListItemAutoSize from '~/components/common/ListItemAutoSize.svelte';
@@ -28,6 +28,7 @@
     import { NativeViewElementNode } from 'svelte-native/dom';
     import { queryTimezone } from '~/helpers/favorites';
     import { onThemeChanged } from '~/helpers/theme';
+    import { widgetBackground } from 'plugin-widgets/svelte/widgetBackground';
     import { iconService, iconThemesFolder } from '~/services/icon';
 
     // Load sample data helper
@@ -38,8 +39,8 @@
 </script>
 
 <script lang="ts">
-    let { colorOnBackground, colorOnSurface, colorOnSurfaceVariant, colorOutline, colorPrimary, colorSurfaceContainer, colorWidgetBackground } = $colors;
-    $: ({ colorOnBackground, colorOnSurface, colorOnSurfaceVariant, colorOutline, colorPrimary, colorSurfaceContainer, colorWidgetBackground } = $colors);
+    let { colorOnBackground, colorOnSurface, colorOnSurfaceVariant, colorOutline, colorPrimary, colorSurfaceContainer } = $colors;
+    $: ({ colorOnBackground, colorOnSurface, colorOnSurfaceVariant, colorOutline, colorPrimary, colorSurfaceContainer } = $colors);
 
     // Props
     export let widgetClass: string = '';
@@ -97,6 +98,15 @@
             previewConfig = await loadWidgetData(widgetClass);
             previewData = previewConfig.preview.fakeData;
             previewSize = previewConfig.preview.sizes[0];
+            // preview with the real weather data when available: chips, intensity and layout follow the app settings
+            try {
+                const liveData = await new WidgetDataManager().getWidgetWeatherData(config);
+                if (liveData) {
+                    previewData = liveData;
+                }
+            } catch (error) {
+                DEV_LOG && console.error('widget preview data', error);
+            }
             DEV_LOG && console.log('onMount', widgetClass, typeof previewConfig.settings, JSON.stringify(previewConfig.settings));
             refresh();
         }
@@ -395,7 +405,7 @@
         }
     }
     async function clearColor(item, event) {
-        item.color = item.id === 'color' ? colorOnSurface : colorWidgetBackground;
+        item.color = item.id === 'color' ? colorOnSurface : widgetBackground().hex;
         delete config.settings[item.id];
         config = config;
         saveConfig();
@@ -458,7 +468,7 @@
                 type: 'color',
                 id: 'backgroundColor',
                 title: lc('background_color'),
-                color: config.settings?.['backgroundColor'] ?? colorWidgetBackground
+                color: config.settings?.['backgroundColor'] ?? widgetBackground().hex
             },
             {
                 type: 'color',
@@ -667,16 +677,16 @@
     <gridlayout class="pageContent" rows="auto,auto,*">
         <!-- Preview Section -->
         {#if widgetComponent && previewData && previewSize}
-            <!-- modern: the preview sits on a tinted card, like a home screen -->
+            <!-- modern: the preview sits on a neutral card, like a home screen -->
             <gridlayout
-                backgroundColor={modern ? new Color($modernColors.colorModernAccent).setAlpha(36).hex : undefined}
+                backgroundColor={modern ? new Color(colorOnSurface).setAlpha(20).hex : undefined}
                 borderRadius={modern ? 20 : 0}
                 margin={modern ? '8 14 4 14' : 0}
                 padding={modern ? 20 : 0}
                 row={1}>
                 <svelte:component
                     this={widgetComponent}
-                    backgroundColor={config?.settings?.transparent ? '#ffffff00' : (config?.settings?.backgroundColor ?? colorWidgetBackground)}
+                    backgroundColor={config?.settings?.transparent ? '#ffffff00' : (config?.settings?.backgroundColor ?? widgetBackground())}
                     {config}
                     data={actualPreviewData}
                     horizontalAlignment="center"

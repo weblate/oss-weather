@@ -15,7 +15,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { BaseLayoutElement, getSingleBinding, hasTemplateBinding, isExpression } from './shared-utils';
+import { BaseLayoutElement, getSingleBinding, hasTemplateBinding, isExpression, resolveTemplates } from './shared-utils';
 import { compilePropertyValue as compilePropValue } from './expression-compiler';
 
 type AnyObj = Record<string, any>;
@@ -212,7 +212,7 @@ function evaluateMapboxExpression(expr: any, context: string = 'data', usedColor
                 }
                 if (path.startsWith('item.')) {
                     if (path === 'item.iconPath') {
-                        return `\iconService.getIconPath(${path}, true, false, config.iconSet)`;
+                        return `(${path}?.startsWith('/') ? ${path} : iconService.getIconPath(${path}, true, false, config.iconSet))`;
                     }
                     return path;
                 }
@@ -320,7 +320,8 @@ function evaluateMapboxExpression(expr: any, context: string = 'data', usedColor
         case '%': {
             const left = evaluateMapboxExpression(args[0], context, usedColors);
             const right = evaluateMapboxExpression(args[1], context, usedColors);
-            return `${left} ${op} ${right}`;
+            // parenthesized: nested arithmetic keeps its order
+            return `(${left} ${op} ${right})`;
         }
         case 'min': {
             const a = evaluateMapboxExpression(args[0], context, usedColors);
@@ -534,7 +535,7 @@ function buildAttribute(widgetName: string, prop: string, value: any, elementPat
     if (Array.isArray(value)) {
         let expr = evaluateMapboxExpression(value, defaultPrefix, usedColors);
         if (expr === 'data.iconPath') {
-            expr = `\iconService.getIconPath(${expr}, true, false, config.iconSet)`;
+            expr = `(${expr}?.startsWith('/') ? ${expr} : iconService.getIconPath(${expr}, true, false, config.iconSet))`;
         }
         if (Array.isArray(attrName)) {
             return attrName.map((attr) => `${attr}={${expr}}`).join(' ');
@@ -546,7 +547,7 @@ function buildAttribute(widgetName: string, prop: string, value: any, elementPat
     if (typeof value === 'string' && hasTemplateBinding(value)) {
         let expr = convertBindingToSvelteExpr(value, defaultPrefix);
         if (value === '{{item.iconPath}}') {
-            expr = `\iconService.getIconPath(${expr}, true, false, config.iconSet)`;
+            expr = `(${expr}?.startsWith('/') ? ${expr} : iconService.getIconPath(${expr}, true, false, config.iconSet))`;
         }
         if (Array.isArray(attrName)) {
             return attrName.map((attr) => `${attr}={${expr}}`).join(' ');
@@ -593,7 +594,7 @@ function buildAttribute(widgetName: string, prop: string, value: any, elementPat
     if (typeof value === 'string') {
         if (value.startsWith('data.') || value.startsWith('item.') || value.startsWith('size.')) {
             if (value === '{{item.iconPath}}') {
-                value = `\iconService.getIconPath(${value}, true, false, config.iconSet)`;
+                value = `(${value}?.startsWith('/') ? ${value} : iconService.getIconPath(${value}, true, false, config.iconSet))`;
             }
             return `${attrName}={${value}}`;
         }
@@ -701,7 +702,8 @@ function generateMarkup(
             case 'scrollView':
                 return null; // Don't render scrollview, will be handled specially
             case 'forEach':
-                return 'collectionview';
+                // a plain {#each}: equal columns in a row, stacked in a column
+                return element.direction === 'horizontal' ? 'gridlayout' : 'stacklayout';
             case 'conditional':
                 return 'fragment';
             case 'clock':
@@ -710,6 +712,10 @@ function generateMarkup(
                 return 'label';
             case 'cspan':
                 return 'cspan';
+            case 'chips':
+                return 'WidgetChips';
+            case 'hourlyChart':
+                return 'WidgetHourlyChart';
             default:
                 return 'stacklayout';
         }
@@ -770,11 +776,8 @@ function generateMarkup(
 
     const attrsArr: string[] = [];
     const seenAttrs = new Set<string>(); // Track attributes to avoid duplicates
+    let forEachItems = '[]';
 
-    if (tag === 'gridlayout') {
-        attrsArr.push('row="auto"');
-        seenAttrs.add('row');
-    }
 
     const attributesToMap = [
         'padding',
@@ -797,7 +800,6 @@ function generateMarkup(
         'textAlignment',
         'maxLines',
         'size',
-        'thickness',
         'visible',
         'visibleIf',
         'col',
@@ -832,6 +834,8 @@ function generateMarkup(
         // Skip limit and direction (direction is converted to orientation below)
         if (k === 'limit' || k === 'direction') continue;
 
+        // chips and hourly chart get their list as their own prop (below)
+        if (k === 'items' && (elType === 'chips' || elType === 'hourlyChart')) continue;
         if (!attributesToMap.includes(k) && k !== 'text' && k !== 'src' && k !== 'items') {
             // alignment/crossAlignment on non-container elements (labels, images inside a stack) still apply directly
             if ((k === 'alignment' || k === 'crossAlignment') && elType !== 'column' && elType !== 'row') {
@@ -860,6 +864,24 @@ function generateMarkup(
                 attrsArr.push(attr);
                 for (const an of attrNames) seenAttrs.add(an);
             }
+        }
+    }
+
+    // modern chips and hourly chart previews (src/svelte): their list and sizes
+    if (elType === 'chips' || elType === 'hourlyChart') {
+        const items = (element.items as string) || (elType === 'chips' ? 'chips' : 'hourlyData');
+        const list = items.startsWith('item.') || items.startsWith('data.') ? items : `${defaultPrefix === 'item' ? 'data' : defaultPrefix}.${items}`;
+        attrsArr.push(elType === 'chips' ? `chips={${list}}` : `hours={${list}}`);
+        if (elType === 'chips') {
+            const numberValue = (value) => (Array.isArray(value) ? evaluateMapboxExpression(value, defaultPrefix) : JSON.stringify(value));
+            for (const key of ['iconSize', 'chipSpacing', 'maxWidth', 'maxRows']) {
+                if (element[key] !== undefined) attrsArr.push(`${key}={${numberValue(element[key])}}`);
+            }
+        }
+        if (element.limit !== undefined) attrsArr.push(`limit={${Array.isArray(element.limit) ? evaluateMapboxExpression(element.limit, defaultPrefix) : element.limit}}`);
+        if (!seenAttrs.has('color')) {
+            attrsArr.push(defaultColor && /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(defaultColor) ? `color={${defaultColor}}` : 'color={$colors.colorOnSurface}');
+            seenAttrs.add('color');
         }
     }
 
@@ -927,31 +949,19 @@ function generateMarkup(
         attrsArr.push(`height={${thickness}}`);
         seenAttrs.add('height');
         if (!element.color && !seenAttrs.has('backgroundColor')) {
-            const defaultVar = colorTokenToVar('onSurfaceVariant');
-            usedColors.add(defaultVar);
-            attrsArr.push(`backgroundColor={${defaultVar}}`);
+            // the widget text color (dimmed with the divider opacity)
+            attrsArr.push(`backgroundColor={${defaultColor && /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(defaultColor) ? defaultColor : '$colors.colorOnSurfaceVariant'}}`);
             seenAttrs.add('backgroundColor');
         }
     } else if (elType === 'forEach') {
-        // Handle orientation from direction property for forEach/collectionview
-        if (element.direction && !seenAttrs.has('orientation')) {
-            const orientation = element.direction === 'horizontal' ? 'horizontal' : 'vertical';
-            seenAttrs.add('orientation');
-            attrsArr.push(`orientation="${orientation}"`);
-            seenAttrs.add('colWidth');
-            attrsArr.push(`colWidth="auto"`);
-        }
-
-        // Replace items attribute with sliced version if limit was set
-        if (itemsValue) {
-            const itemsAttrIndex = attrsArr.findIndex((a) => a.startsWith('items='));
-            if (itemsAttrIndex !== -1) {
-                attrsArr[itemsAttrIndex] = `items={${itemsValue}}`;
-            } else {
-                // Items attribute wasn't added yet, add it now
-                attrsArr.push(`items={${itemsValue}}`);
-                seenAttrs.add('items');
-            }
+        // the list for the {#each} block (sliced when limited), not an attribute
+        const itemsAttrIndex = attrsArr.findIndex((attr) => attr.startsWith('items='));
+        const itemsAttr = itemsAttrIndex !== -1 ? attrsArr.splice(itemsAttrIndex, 1)[0].replace(/^items=\{(.*)\}$/s, '$1') : 'undefined';
+        forEachItems = `(${itemsValue ?? itemsAttr} ?? [])`;
+        if (element.direction === 'horizontal') {
+            attrsArr.push(`columns={${forEachItems}.map(() => '*').join(',')}`);
+        } else {
+            attrsArr.push('orientation="vertical"');
         }
     }
 
@@ -986,6 +996,10 @@ function generateMarkup(
         seenAttrs.add('text');
     }
 
+    // a grid without rows has one * row: in a vertical stack it would take all the remaining height
+    if (tag === 'gridlayout' && !attrsArr.some((attr) => attr.startsWith('rows='))) {
+        attrsArr.push('rows="auto"');
+    }
     const attrStr = attrsArr.length ? ' ' + attrsArr.join(' ') : '';
 
     // Now generate children markup
@@ -1148,6 +1162,9 @@ function generateMarkup(
         return m;
     }
 
+    // a list in a row lays its items out horizontally
+    const rowForEach = (child: BaseLayoutElement) => (elType === 'row' && child.type === 'forEach' && !child.direction ? { ...child, direction: 'horizontal' } : child);
+
     if (hasFlex1Children) {
         // GridLayout mode: assign col/row slots to each child; spacers occupy their slot
         const isRow = elType === 'row';
@@ -1173,7 +1190,7 @@ function generateMarkup(
             }
 
             // Regular child: generate markup and inject col/row slot index
-            let childMarkup = generateMarkup(widgetName, children[i], [...elementPath, `${element.type}${i}`], usedTemplateImport, usedColors, defaultPrefix, defaultColor);
+            let childMarkup = generateMarkup(widgetName, rowForEach(children[i]), [...elementPath, `${element.type}${i}`], usedTemplateImport, usedColors, defaultPrefix, defaultColor);
             if (childMarkup) {
                 childMarkup = addAttrToMarkup(childMarkup, slotAttr, slotIdx);
                 childMarkups.push(childMarkup);
@@ -1193,7 +1210,7 @@ function generateMarkup(
                 continue;
             }
 
-            const childMarkup = generateMarkup(widgetName, children[i], [...elementPath, `${element.type}${i}`], usedTemplateImport, usedColors, defaultPrefix, defaultColor);
+            const childMarkup = generateMarkup(widgetName, rowForEach(children[i]), [...elementPath, `${element.type}${i}`], usedTemplateImport, usedColors, defaultPrefix, defaultColor);
             if (childMarkup) childMarkups.push(childMarkup);
         }
     }
@@ -1222,14 +1239,14 @@ function generateMarkup(
     }
 
     if (elType === 'forEach') {
-        usedTemplateImport.val = true;
-
-        // Generate the inner template with item context
-        const innerTemplate = element.itemTemplate ? generateMarkup(widgetName, element.itemTemplate, [...elementPath, 'itemTemplate'], usedTemplateImport, usedColors, 'item', defaultColor) : '';
-
+        // Generate the inner template with item context, one grid column per item when horizontal
+        let innerTemplate = element.itemTemplate ? generateMarkup(widgetName, element.itemTemplate, [...elementPath, 'itemTemplate'], usedTemplateImport, usedColors, 'item', defaultColor) : '';
+        if (innerTemplate && element.direction === 'horizontal') {
+            innerTemplate = injectAttrIntoMarkup(innerTemplate, 'col={index}');
+        }
         if (innerTemplate) {
             const templateIndent = indent + '    ';
-            childrenMarkup = `\n${templateIndent}<Template let:item>\n${innerTemplate}\n${templateIndent}</Template>\n${indent}`;
+            childrenMarkup = `\n${templateIndent}{#each ${forEachItems} as item, index}\n${innerTemplate}\n${templateIndent}{/each}\n${indent}`;
         }
     } else if (childMarkups.length > 0) {
         childrenMarkup = '\n' + childMarkups.join('\n') + '\n' + indent;
@@ -1302,6 +1319,8 @@ function generateSvelteComponent(layout: WidgetLayout): string {
     script += `    import { path } from '@nativescript/core';\n`;
     script += `    import { iconService, iconThemesFolder } from '~/services/icon';\n`;
     script += `    import { colors } from '~/variables';\n`;
+    if (JSON.stringify(layout).includes('"type":"chips"')) script += `    import WidgetChips from 'plugin-widgets/svelte/WidgetChips.svelte';\n`;
+    if (JSON.stringify(layout).includes('"type":"hourlyChart"')) script += `    import WidgetHourlyChart from 'plugin-widgets/svelte/WidgetHourlyChart.svelte';\n`;
     script += `    import type { WeatherWidgetData, WidgetConfig } from 'plugin-widgets/WidgetTypes';\n`;
     script += `</script>\n`;
     script += `<script lang="ts">\n`;
@@ -1395,7 +1414,7 @@ export function generateWidgetSvelte(layoutsDir: string, outputDir: string, widg
     const raw = fs.readFileSync(layoutPath, 'utf-8');
     let layout: WidgetLayout;
     try {
-        layout = JSON.parse(raw) as WidgetLayout;
+        layout = resolveTemplates(JSON.parse(raw) as WidgetLayout, path.join(path.dirname(layoutPath), 'templates'));
     } catch (e) {
         console.error(`Failed to parse ${layoutPath}:`, (e as Error).message);
         return;

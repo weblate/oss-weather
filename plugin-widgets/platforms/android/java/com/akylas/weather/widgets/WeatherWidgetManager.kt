@@ -1472,6 +1472,9 @@ data class WidgetConfig(
 @Serializable
 data class WeatherWidgetData(
     val temperature: String = "",
+    val temperatureHigh: String = "",
+    val temperatureLow: String = "",
+    val chips: List<WidgetChip> = emptyList(),
     val iconPath: String = "",
     val description: String = "",
     val locationName: String = "",
@@ -1493,11 +1496,25 @@ data class HourlyData(
     val precipitation: String = "",
     val windSpeed: String = "",
     val precipAccumulation: String = "",
+    val hour: String = "",
+    // temperature curve height (0 lowest - 1 highest of the shown hours)
+    val curve: Float = 0.5f,
+    // precipitation bars, amount (without unit) and probability like the app hourly item ("" when hidden)
+    val precipBars: List<PrecipBar> = emptyList(),
+    val precipAmount: String = "",
+    val precipProbability: String = "",
+    val wind: WidgetChip = WidgetChip(),
 )
 
 @Serializable
 data class DailyData(
     val day: String = "",
+    val date: String = "",
+    val chips: List<WidgetChip> = emptyList(),
+    val precipChips: List<WidgetChip> = emptyList(),
+    // min / max on the range of the shown days (0-1), for the range bar
+    val rangeStart: Float = 0f,
+    val rangeEnd: Float = 1f,
     val description: String = "",
     val temperatureHigh: String = "",
     val temperatureLow: String = "",
@@ -1505,6 +1522,30 @@ data class DailyData(
     val iconPath: String = "",
     val precipitation: String = "",
     val precipAccumulation: String = "",
+)
+
+/**
+ * A weather data chip (computed by the app): icon png, value, unit, intensity tint and probability bar
+ */
+@Serializable
+data class WidgetChip(
+    val iconPath: String = "",
+    val value: String = "",
+    val unit: String = "",
+    val tint: String = "",
+    val barFraction: Float = 0f,
+    val barColor: String = "",
+)
+
+/**
+ * A precipitation bar of an hour column: horizontal part (0-1), top as a fraction of the height, #rrggbbaa color
+ */
+@Serializable
+data class PrecipBar(
+    val start: Float = 0f,
+    val end: Float = 1f,
+    val top: Float = 1f,
+    val color: String = "",
 )
 
 @Serializable
