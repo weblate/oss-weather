@@ -9,7 +9,7 @@ import { join, resolve } from 'node:path';
 import { toSvg } from './tabler-svg.mjs';
 import { MOON_PHASES, beaufortMarkup, moonPhaseMarkup } from './weather-glyphs.mjs';
 
-const projectRoot = resolve(import.meta.dirname, '..');
+const projectRoot = resolve(import.meta.dirname, '..', 'iconotype');
 // Tabler draws with a 2 stroke; a bit heavier reads better at data icon sizes, not at small ones
 const FONTS = [
     { family: 'ossweatherdata', strokeWidth: 2.5, styles: true },

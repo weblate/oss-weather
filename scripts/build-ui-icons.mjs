@@ -9,7 +9,7 @@ import { toFilledSvg, toSvg } from './tabler-svg.mjs';
 
 const projectRoot = resolve(import.meta.dirname, '..');
 const FAMILY = 'ossweather-ui';
-const projectFile = join(projectRoot, `${FAMILY}.iconotype.json`);
+const projectFile = join(projectRoot, 'iconotype', `${FAMILY}.iconotype.json`);
 const lockFile = join(projectRoot, `${FAMILY}.codepoints.lock`);
 const STROKE_WIDTH = 2;
 
