@@ -264,3 +264,12 @@ export function tintAlpha(fraction: number, darkTheme: boolean) {
     const base = cardBackgroundAlpha(darkTheme);
     return Math.round(base + fraction * ((darkTheme ? 110 : 80) - base));
 }
+
+// family of the texts (canvas paints, dialogs): the bundled Inter variable font in modern. Android uses
+// the res/font/inter.xml family (one entry per weight on the wght axis) to get real weights
+export function textFontFamily(style: DesignStyle, android = __ANDROID__): string | undefined {
+    if (style !== 'modern') {
+        return undefined;
+    }
+    return android ? 'res/inter' : 'Inter';
+}

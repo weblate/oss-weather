@@ -21,6 +21,11 @@ import { startSentry } from '@shared/utils/sentry';
 import WeatherPage from '~/components/WeatherPage.svelte';
 import { lc } from '~/helpers/locale';
 import { start as startThemeHelper } from '~/helpers/theme';
+import { start as startDesignStyleClass } from '~/helpers/designStyleClass';
+import { start as startModernTheme } from '~/helpers/modernTheme';
+import { fixFontCloneTypeface } from '~/helpers/fontClone';
+import { installVariableFontWeights } from '~/helpers/variableFont';
+import { start as startDefaultFont } from '~/helpers/defaultFont';
 
 import { networkService } from './services/api';
 import { navigate } from '@shared/utils/svelte/ui';
@@ -33,6 +38,9 @@ try {
     }
     setGeoLocationKeys('lat', 'lon', 'altitude');
     installGestures(true);
+    fixFontCloneTypeface();
+    installVariableFontWeights();
+    startDefaultFont();
     overrideSpanAndFormattedString();
     installMixins();
     installUIMixins();
@@ -90,6 +98,8 @@ try {
 
     Application.on(Application.launchEvent, async () => {
         startThemeHelper();
+        startDesignStyleClass();
+        startModernTheme();
         startWindowHelper({ refreshMenuTitle: lc('refresh') });
     });
     Application.on(Application.exitEvent, async () => {

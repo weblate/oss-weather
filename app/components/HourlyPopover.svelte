@@ -1,6 +1,6 @@
 <script lang="ts">
     import { Color } from '@akylas/nativescript';
-    import { createNativeAttributedString } from '@nativescript-community/text';
+    import { textAttributedString } from '~/utils/ui/attributedString';
     import { Align, Canvas, CanvasView, Cap, DashPathEffect, LayoutAlignment, Paint, StaticLayout, Style } from '@nativescript-community/ui-canvas';
     import { closePopover } from '@nativescript-community/ui-popover/svelte';
     import { formatTime } from '~/helpers/locale';
@@ -8,7 +8,7 @@
     import type { CommonWeatherData } from '~/services/providers/weather';
     import { CommonData, WeatherProps, weatherDataService } from '~/services/weatherData';
     import { accentFontWeight, colors, designStyle, fontScale } from '~/variables';
-    import { dataTextStyle, modernDataColor, modernLineStyle, precipitationFill } from '~/utils/designStyle';
+    import { dataTextStyle, modernDataColor, modernLineStyle, precipitationFill, textFontFamily } from '~/utils/designStyle';
     import { tempColor } from '~/utils/utils.common';
     import { splitValueUnit } from '~/utils/valueUnit';
     import WeatherIcon from './WeatherIcon.svelte';
@@ -25,6 +25,11 @@
     let { colorBackground, colorOnSurface, colorOnSurfaceVariant, colorOutline, colorOutlineVariant, colorSurfaceContainer } = $colors;
     $: ({ colorBackground, colorOnSurface, colorOnSurfaceVariant, colorOutline, colorOutlineVariant, colorSurfaceContainer } = $colors);
     $: modernStyle = $designStyle === 'modern';
+    $: {
+        const fontFamily = textFontFamily($designStyle);
+        labelPaint.setFontFamily(fontFamily);
+        modernTextPaint.setFontFamily(fontFamily);
+    }
     $: rowHeight = (modernStyle ? 24 : 19) * $fontScale;
     export let item: CommonWeatherData;
     export let isUserInteractionEnabled: boolean = true;
@@ -120,7 +125,7 @@
             paint.textSize = c.iconFontSize * 0.8;
             canvas.drawText(c.icon || ' ', 10, dy + rowHeight - (__IOS__ ? 5 : 2) * $fontScale, paint);
 
-            const nativeText = createNativeAttributedString({
+            const nativeText = textAttributedString({
                 spans: [
                     c.value !== undefined
                         ? {

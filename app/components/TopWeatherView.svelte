@@ -1,6 +1,6 @@
 <script context="module" lang="ts">
     import type { NativeViewElementNode } from '@nativescript-community/svelte-native/dom';
-    import { createNativeAttributedString } from '@nativescript-community/text';
+    import { textAttributedString } from '~/utils/ui/attributedString';
     import { Align, BitmapShader, Canvas, LayoutAlignment, Paint, StaticLayout, TileMode } from '@nativescript-community/ui-canvas';
     import { CombinedChart, LineChart } from '@nativescript-community/ui-chart';
     import { LimitLabelPosition, LimitLine } from '@nativescript-community/ui-chart/components/LimitLine';
@@ -35,7 +35,7 @@
         weatherDataLayout,
         windowSize
     } from '~/variables';
-    import { cardBackgroundAlpha, dataTextStyle, headerTextStyle, precipKind, precipitationFill, styledDataIcon } from '~/utils/designStyle';
+    import { cardBackgroundAlpha, dataTextStyle, headerTextStyle, precipKind, precipitationFill, styledDataIcon, textFontFamily } from '~/utils/designStyle';
     import { getMoonIlluminationPercent } from '~/helpers/moon';
     import { drawChips, prepareChips } from '~/helpers/chips';
     import { TOP_GRID_OPTIONS, drawCenteredValue, drawGrid, prepareGrid } from '~/helpers/dataGrid';
@@ -110,6 +110,11 @@
     $: ({ colorOnSurface, colorOnSurfaceVariant, colorOutline, colorOutlineVariant } = $colors);
     $: chipsTheme = { onSurface: colorOnSurface, onSurfaceVariant: colorOnSurfaceVariant };
     $: header = headerTextStyle($designStyle, $fontScale, $accentFontWeight);
+    $: {
+        const fontFamily = textFontFamily($designStyle);
+        textPaint.setFontFamily(fontFamily);
+        textIconPaint.setFontFamily(fontFamily);
+    }
 
     // const arcPaint = new Paint();
     // arcPaint.style = Style.STROKE;
@@ -415,7 +420,7 @@
                 ? `${lc('feels_like')} ${formatWeatherValue(item, WeatherProps.apparentTemperature)} · `
                 : '';
         const temperaturesLayout = new StaticLayout(
-            createNativeAttributedString({
+            textAttributedString({
                 spans: [
                     { fontSize: 13 * $fontScale, color: colorOnSurfaceVariant, text: feelsLike },
                     { fontSize: header.maxTempSize * 0.8, fontWeight: header.maxTempWeight, color: colorOnSurface, text: formatWeatherValue(item, WeatherProps.temperatureMax) },
@@ -546,7 +551,7 @@
             textPaint.textSize = 36 * $fontScale;
             canvas.drawText(formatWeatherValue(item, WeatherProps.temperature), 10, 36 * $fontScale, textPaint);
         }
-        const nString = createNativeAttributedString({
+        const nString = textAttributedString({
             spans: [
                 {
                     fontSize: header.minTempSize,
@@ -572,7 +577,7 @@
         textPaint.textSize = 14 * $fontScale;
         const modernStyle = $designStyle === 'modern';
         staticLayout = new StaticLayout(
-            createNativeAttributedString({
+            textAttributedString({
                 spans: [
                     {
                         color: '#ffa500',

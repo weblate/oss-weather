@@ -1,5 +1,5 @@
 <script context="module" lang="ts">
-    import { createNativeAttributedString } from '@nativescript-community/text';
+    import { textAttributedString } from '~/utils/ui/attributedString';
     import { Align, Canvas, LayoutAlignment, Paint, StaticLayout } from '@nativescript-community/ui-canvas';
     import { tempColor } from '~/utils/utils.common';
     import WeatherIcon from '~/components/WeatherIcon.svelte';
@@ -9,7 +9,7 @@
     import { createEventDispatcher } from '@shared/utils/svelte/ui';
     import { accentFontWeight, colors, dailyDataAlignment, dailyDateFormat, dataIntensity, designStyle, fontScale, showEmptyData, weatherDataLayout, windowSize } from '~/variables';
     import { isDarkTheme, isEInk } from '~/helpers/theme';
-    import { cardBackgroundAlpha, dataTextStyle, headerTextStyle } from '~/utils/designStyle';
+    import { cardBackgroundAlpha, dataTextStyle, headerTextStyle, textFontFamily } from '~/utils/designStyle';
     import { drawChips, prepareChips } from '~/helpers/chips';
     import { chipsAlignment } from '~/utils/chipsLayout';
     import { rangeBarSpan } from '~/utils/dataGrid';
@@ -74,6 +74,11 @@
     $: $dataIntensity !== undefined && redraw();
 
     $: header = headerTextStyle($designStyle, $fontScale, $accentFontWeight);
+    $: {
+        const fontFamily = textFontFamily($designStyle);
+        textPaint.setFontFamily(fontFamily);
+        textIconSubPaint.setFontFamily(fontFamily);
+    }
     $: modern = $designStyle === 'modern';
     // with the date inline next to the day, the left column is free and chips go under the header
     // modern: only the grid sits in a card, chips already have their own background
@@ -222,7 +227,7 @@
         // textPaint.setTextSize(header.dateSize);
         // canvas.drawText(formatDate(item.time, dailyDateFormat, item.timezoneOffset), dateLeft, header.dateInline ? dayBaseline : 46 * $fontScale, textPaint);
 
-        let nString = createNativeAttributedString(
+        let nString = textAttributedString(
             {
                 spans: [
                     {
@@ -238,8 +243,7 @@
                         text: ' ' + formatDate(item.time, dailyDateFormat, item.timezoneOffset)
                     }
                 ]
-            },
-            null
+            }
         );
         canvas.save();
         const dayBaseline = (header.dateInline ? 26 : 26) * $fontScale;
@@ -250,7 +254,7 @@
 
         textPaint.setColor(colorOnSurface);
 
-        nString = createNativeAttributedString(
+        nString = textAttributedString(
             {
                 spans: [
                     {
@@ -266,8 +270,7 @@
                         text: '' + formatWeatherValue(item, WeatherProps.temperatureMax)
                     }
                 ]
-            },
-            null
+            }
         );
         canvas.save();
         staticLayout = new StaticLayout(nString, textPaint, w - 10, LayoutAlignment.ALIGN_OPPOSITE, 1, 0, true);
