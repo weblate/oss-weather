@@ -46,7 +46,7 @@
     "repository": "https://github.com/ossappscollective/oss-weather",
     "dependencies": {
         "@akylas/address-formatter": "5.3.1",
-        "@akylas/nativescript": "9.0.23",
+        "@akylas/nativescript": "9.0.24",
         "@akylas/nativescript-app-tools": "portal:tools",
         "@akylas/nativescript-app-utils": "2.2.15",
         "@akylas/nativescript-inapp-purchase": "0.0.5",
@@ -107,7 +107,7 @@
         "@akylas/nativescript-ios-runtime": "9.0.3",
         "@akylas/nativescript-webpack": "5.0.35",
         "@iconotype/cli": "0.3.0",
-        "@nativescript/android-quickjs-ng": "9.0.0-alpha.4",
+        "@nativescript/android-quickjs-ng": "9.0.0-alpha.5",
         "@nativescript/core": "~9.0.20",
         "@nativescript/ios": "9.1.0",
         "@resvg/resvg-js": "2.6.2",

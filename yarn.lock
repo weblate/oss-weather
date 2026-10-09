@@ -158,9 +158,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@akylas/nativescript@npm:9.0.23":
-  version: 9.0.23
-  resolution: "@akylas/nativescript@npm:9.0.23"
+"@akylas/nativescript@npm:9.0.24":
+  version: 9.0.24
+  resolution: "@akylas/nativescript@npm:9.0.24"
   dependencies:
     "@csstools/css-calc": "npm:~2.1.4"
     "@csstools/css-color-parser": "npm:^3.0.10"
@@ -174,7 +174,7 @@ __metadata:
     source-map: "npm:0.7.6"
     source-map-js: "npm:^1.2.1"
     tslib: "npm:^2.0.0"
-  checksum: 10/976b2e07b7088a48856f95162395e6470874c3d89f5250ec467a221630594089e3c456579e0d747981c6aefe11f01453c2fff00c995cdc60b64ecccd8f9480ca
+  checksum: 10/218554e81b7e6dba2e9cad90e901338c80da89fff05ce4f78cec8a7f1b84a24b9d02bba77cebf37f5729c25337b63a7e7474895e7d03b619a9c45b2a42a98384
   languageName: node
   linkType: hard
 
@@ -2958,7 +2958,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nativescript-community/ui-canvas@npm:4.6.53, @nativescript-community/ui-canvas@npm:^4.6.53":
+"@nativescript-community/ui-canvas@npm:4.6.53":
   version: 4.6.53
   resolution: "@nativescript-community/ui-canvas@npm:4.6.53"
   dependencies:
@@ -2967,12 +2967,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nativescript-community/ui-canvas@npm:^4.6.46":
-  version: 4.6.52
-  resolution: "@nativescript-community/ui-canvas@npm:4.6.52"
+"@nativescript-community/ui-canvas@npm:^4.6.46, @nativescript-community/ui-canvas@npm:^4.6.53":
+  version: 4.6.54
+  resolution: "@nativescript-community/ui-canvas@npm:4.6.54"
   dependencies:
     "@nativescript-community/arraybuffers": "npm:^1.1.5"
-  checksum: 10/4d33b5a89c566ebf1e5c41b8e8364d3786fcecc1ea02ce6f22de1442f5c795973a87499b1720c8308ecbd85b763b4a94be86faf746392fa63d5cd013ff6bc06a
+  checksum: 10/014991911417c3e6b359836d6db4cd56b0cd0acb9198e39fab44c84e24f755750672eab2566db108f9cc1a3e3511eb348ecc261c67b85e5cd257975dd873c9ab
   languageName: node
   linkType: hard
 
@@ -3229,10 +3229,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nativescript/android-quickjs-ng@npm:9.0.0-alpha.4":
-  version: 9.0.0-alpha.4
-  resolution: "@nativescript/android-quickjs-ng@npm:9.0.0-alpha.4"
-  checksum: 10/20cb906c50fbdb3e3e9ba726c424cd2285025ebd2d1e87b8cd4fc196a68ddf4f55dc7c5017979ee02f33c94aa2eed834572059f2ea570021db1c46018f84b6e1
+"@nativescript/android-quickjs-ng@npm:9.0.0-alpha.5":
+  version: 9.0.0-alpha.5
+  resolution: "@nativescript/android-quickjs-ng@npm:9.0.0-alpha.5"
+  checksum: 10/c66a932604e234909bac37e6d76f02f69e9af03b3a1df82dc0aa8bb3468da7ab1a120031dc4bb656ce53dfd9514811824ef0381c4ea628086715693976f74938
   languageName: node
   linkType: hard
 
@@ -13591,7 +13591,7 @@ __metadata:
   resolution: "root-workspace-0b6124@workspace:."
   dependencies:
     "@akylas/address-formatter": "npm:5.3.1"
-    "@akylas/nativescript": "npm:9.0.23"
+    "@akylas/nativescript": "npm:9.0.24"
     "@akylas/nativescript-app-tools": "portal:tools"
     "@akylas/nativescript-app-utils": "npm:2.2.15"
     "@akylas/nativescript-inapp-purchase": "npm:0.0.5"
@@ -13643,7 +13643,7 @@ __metadata:
     "@nativescript-community/ui-webview": "npm:1.6.2"
     "@nativescript-community/ui-zoomimage": "npm:4.6.20"
     "@nativescript-community/universal-links": "npm:3.0.2"
-    "@nativescript/android-quickjs-ng": "npm:9.0.0-alpha.4"
+    "@nativescript/android-quickjs-ng": "npm:9.0.0-alpha.5"
     "@nativescript/core": "npm:~9.0.20"
     "@nativescript/ios": "npm:9.1.0"
     "@nativescript/iqkeyboardmanager": "npm:2.1.2"
