@@ -6,7 +6,7 @@
     import { CollectionViewWithSwipeMenu } from '@nativescript-community/ui-collectionview-swipemenu';
     import DrawerElement from '@nativescript-community/ui-drawer/svelte';
     import { showBottomSheet } from '@nativescript-community/ui-material-bottomsheet/svelte';
-    import { confirm, prompt } from '@nativescript-community/ui-material-dialogs';
+    import { confirm, prompt } from '~/utils/ui/dialogs';
     import { showSnack } from '@nativescript-community/ui-material-snackbar';
     import { VerticalPosition } from '@nativescript-community/ui-popover';
     import { closePopover } from '@nativescript-community/ui-popover/svelte';
@@ -83,7 +83,10 @@
     import { parseUrlQueryParameters } from '~/utils/http';
     import { hideLoading, selectValue, showLoading, showPopoverMenu, showToast, tryCatchFunction } from '~/utils/ui';
     import { isBRABounds } from '~/utils/utils.common';
-    import { actionBarHeight, colors, fontScale, fonts, onFontScaleChanged, onSettingsChanged, windowInset } from '~/variables';
+    import { accentFontWeight, actionBarHeight, colors, designStyle, fontScale, fonts, onFontScaleChanged, onSettingsChanged, windowInset } from '~/variables';
+    import { groupPosition } from '~/utils/settingsGroups';
+    import { groupRowClass } from '~/utils/groupClass';
+    import { timeDifferenceLabel } from '~/utils/timeDifference';
     import IconButton from './common/IconButton.svelte';
     import { WeatherProvider } from '~/services/providers/weatherprovider';
     import { isLibreWXRSource } from '~/services/providers/librewxr';
@@ -97,6 +100,7 @@
 <script lang="ts">
     let { colorBackground, colorError, colorOnBackground, colorOnError, colorOnSurface, colorOnSurfaceVariant, colorOutlineVariant, colorPrimary, colorSurface } = $colors;
     $: ({ colorBackground, colorError, colorOnBackground, colorOnError, colorOnSurface, colorOnSurfaceVariant, colorOutlineVariant, colorPrimary, colorSurface } = $colors);
+    $: modern = $designStyle === 'modern';
 
     let loading = false;
     let weatherLocation: FavoriteLocation = JSON.parse(ApplicationSettings.getString(SETTINGS_WEATHER_LOCATION, DEFAULT_LOCATION || 'null'));
@@ -119,6 +123,32 @@
     let pullRefresh: NativeViewElementNode<PullToRefresh>;
     let networkConnected = networkService.connected;
     let page: NativeViewElementNode<Page>;
+    // modern menus: provider values on the right (long ones stay under the title), colored provider
+    // icons, groups separated by a line
+    const MODERN_MENU_ICON_COLORS = { provider: '#378ADD', om_model: '#888780', provider_aqi: '#97C459', provider_marine: '#378ADD' };
+    const MODERN_MENU_MAX_RIGHT_VALUE = 14;
+    // short titles so that the value fits next to them
+    const MODERN_MENU_SHORT_NAMES = { provider_marine: () => lc('marine_provider'), provider_aqi: () => lc('air_quality'), om_model: () => lc('model') };
+    // modern: views first, then location settings, then the app settings
+    const MODERN_MENU_ORDER = ['refresh', 'chart', 'compare', 'map', 'meteo_blue', 'provider_marine', 'bra', 'select_map', 'gps_location', 'preferences'];
+    function modernMenuOptions(options: any[], groupStartIds: string[]) {
+        if (!modern) {
+            return options;
+        }
+        const sorted = [...options].sort((first, second) => MODERN_MENU_ORDER.indexOf(first.id) - MODERN_MENU_ORDER.indexOf(second.id));
+        return sorted.map((option) => {
+            const valueOnRight = option.subtitle?.length <= MODERN_MENU_MAX_RIGHT_VALUE;
+            return {
+                ...option,
+                name: MODERN_MENU_SHORT_NAMES[option.id]?.() ?? option.name,
+                title: MODERN_MENU_SHORT_NAMES[option.id]?.() ?? option.title,
+                rightValue: valueOnRight ? option.subtitle : undefined,
+                subtitle: valueOnRight ? undefined : option.subtitle,
+                iconColor: MODERN_MENU_ICON_COLORS[option.id],
+                groupStart: groupStartIds.indexOf(option.id) !== -1
+            };
+        });
+    }
     async function showOptions(event) {
         try {
             const options = (
@@ -192,11 +222,11 @@
                 }
             }
             await showPopoverMenu({
-                options,
+                options: modernMenuOptions(options, modern ? ['provider_marine', 'preferences'] : ['refresh', 'provider_marine']),
                 anchor: event.object,
                 vertPos: VerticalPosition.BELOW,
                 props: {
-                    width: 220 * $fontScale,
+                    width: (modern ? 270 : 220) * $fontScale,
                     maxHeight: Screen.mainScreen.heightDIPs - $actionBarHeight
                     // autoSizeListItem: true
                 },
@@ -1110,11 +1140,11 @@
             }
 
             await showPopoverMenu({
-                options,
+                options: modernMenuOptions(options, ['provider', 'compare', options.some((option) => option.id === 'bra') ? 'bra' : 'delete']),
                 anchor: event.object,
                 vertPos: VerticalPosition.BELOW,
                 props: {
-                    width: 220 * $fontScale,
+                    width: (modern ? 270 : 220) * $fontScale,
                     maxHeight: Screen.mainScreen.heightDIPs - $actionBarHeight
                     // autoSizeListItem: true
                 },
@@ -1171,7 +1201,10 @@
                                 case 'rename':
                                     result = await prompt({
                                         title: lc('rename'),
-                                        defaultText: favItem.name
+                                        defaultText: favItem.name,
+                                        okButtonText: lc('save'),
+                                        cancelButtonText: lc('cancel'),
+                                        textFieldProperties: { helper: lc('rename_helper') }
                                     });
                                     if (result.result && result.text?.length) {
                                         await renameFavorite(favItem, result.text);
@@ -1199,6 +1232,16 @@
             data.push(item.sys.country);
         }
         return data.join(', ') + '\n' + `${item.coord.lat.toFixed(3)},${item.coord.lon.toFixed(3)}`;
+    }
+    // modern: the favorites are one card, the selected one highlighted
+    function favoriteRowClass(item: FavoriteLocation, current: WeatherLocation) {
+        const index = favorites.indexOf(item);
+        const position = groupPosition(index, favorites.length, () => undefined);
+        return groupRowClass(position) + (isCurrentLocation(item, current) ? ' modernGroupRowSelected' : '');
+    }
+    // modern: the region only, the coordinates are not useful at a glance
+    function getFavoriteRegion(item: FavoriteLocation) {
+        return [item.sys.state, item.sys.country].filter((text) => !!text).join(', ');
     }
 
     function onItemReordered(e) {
@@ -1237,6 +1280,26 @@
                     row="1"
                     text={$slc('powered_by', l(`provider.${provider}`))}
                     verticalAlignment="bottom" />
+            {:else if modern}
+                <stackLayout horizontalAlignment="center" paddingLeft={28} paddingRight={28} row={1} verticalAlignment="middle">
+                    <label class="modernEmptyIcon" horizontalAlignment="center" text="mdi-weather-sunny" verticalTextAlignment="center" />
+                    <label class="modernEmptyTitle" text={lc('choose_location')} />
+                    <label class="modernEmptyText" text={$sl('no_location_desc')} textWrap={true} />
+                    {#if gpsAvailable}
+                        <mdbutton class="modernButton" margin="4 0" on:tap={getLocationAndWeather}>
+                            <cspan fontFamily={$fonts.mdi} fontSize={18 * $fontScale} fontWeight="normal" text="mdi-crosshairs-gps" />
+                            <cspan fontWeight={$accentFontWeight} text={'  ' + $slc('my_location')} />
+                        </mdbutton>
+                    {/if}
+                    <mdbutton class="modernButtonOutline" margin="4 0" variant="outline" on:tap={() => searchCity()}>
+                        <cspan fontFamily={$fonts.mdi} fontSize={18 * $fontScale} fontWeight="normal" text="mdi-magnify" />
+                        <cspan fontWeight={$accentFontWeight} text={'  ' + $slc('search_location')} />
+                    </mdbutton>
+                    <mdbutton class="modernButtonText" margin="4 0" variant="text" on:tap={selectLocationOnMap}>
+                        <cspan fontFamily={$fonts.mdi} fontSize={18 * $fontScale} fontWeight="normal" text="mdi-map-plus" />
+                        <cspan fontWeight={$accentFontWeight} text={'  ' + $slc('select_location_map')} />
+                    </mdbutton>
+                </stackLayout>
             {:else}
                 <stackLayout id="hodler" horizontalAlignment="center" paddingLeft={20} paddingRight={20} row={1} verticalAlignment="middle">
                     <label id="test" ios:iosAccessibilityAdjustsFontSize={false} fontSize={16 * $fontScale} marginBottom={20} text={$sl('no_location_desc')} textAlignment="center" textWrap={true} />
@@ -1283,8 +1346,15 @@
             </CActionBar>
             <progress backgroundColor="transparent" busy={loading} indeterminate={true} row={1} verticalAlignment="top" />
         </gridlayout>
-        <gridlayout prop:leftDrawer class="drawer" rows="auto,*" width="300" android:marginTop={$windowInset.top}>
-            <label class="actionBarTitle" margin="20 20 20 20" text={$slc('favorites')} />
+        <gridlayout prop:leftDrawer class="drawer" rows="auto,*,auto" width="300" android:marginTop={$windowInset.top}>
+            {#if modern}
+                <gridlayout columns="*,auto" padding="10 6 4 22">
+                    <label class="actionBarTitle" text={$slc('favorites')} verticalTextAlignment="center" />
+                    <mdbutton class="actionBarButton" col={1} text="mdi-magnify" variant="text" on:tap={() => searchCity()} />
+                </gridlayout>
+            {:else}
+                <label class="actionBarTitle" margin="20 20 20 20" text={$slc('favorites')} />
+            {/if}
             <collectionview
                 bind:this={favoriteCollectionView}
                 id="favorite"
@@ -1296,33 +1366,72 @@
                 on:itemReorderStarting={onItemReorderStarting}
                 on:itemReordered={onItemReordered}>
                 <Template let:item>
-                    <gridlayout
-                        borderBottomColor={colorOutlineVariant}
-                        borderBottomWidth={1}
-                        borderRightColor={colorPrimary}
-                        borderRightWidth={isCurrentLocation(item, weatherLocation) ? 6 : 0}
-                        columns="*,auto"
-                        padding={10}
-                        rippleColor={colorOnSurface}
-                        on:tap={() => saveLocation(item)}>
-                        <stacklayout marginRight={30}>
-                            <label color={colorOnSurface} disableCss={true} fontSize={17 * $fontScale} fontWeight="bold" lineBreak="end" maxLines={2} text={getLocationName(item)} textWrap={true} />
-                            <label color={colorOnSurfaceVariant} disableCss={true} fontSize={14 * $fontScale} text={getFavoriteSubtitle(item)} textWrap={true} />
-                        </stacklayout>
-                        <label
-                            col={1}
-                            color={colorOnSurfaceVariant}
-                            disableCss={true}
-                            fontSize={14 * $fontScale}
-                            paddingTop={3 * $fontScale}
-                            text={formatTime(Date.now(), 'LT', item.timezoneOffset)}
-                            textWrap={true}
-                            verticalAlignment="top"
-                            visibility={item.timezone ? 'visible' : 'hidden'} />
-                        <IconButton col={1} gray={true} horizontalAlignment="right" size={40} text="mdi-dots-vertical" verticalAlignment="bottom" on:tap={(event) => showFavMenu(item, event)} />
-                    </gridlayout>
+                    {#if modern}
+                        <!-- one card, selected row highlighted, local time and time difference on the right -->
+                        <gridlayout class={favoriteRowClass(item, weatherLocation)} columns="auto,*,auto,auto" padding="10 2 10 12" rippleColor={colorOnSurface} on:tap={() => saveLocation(item)}>
+                            <label
+                                class="modernTile modernTileRound"
+                                color={isCurrentLocation(item, weatherLocation) ? '#EF9F27' : '#888780'}
+                                text="mdi-map-marker-circle"
+                                verticalAlignment="center"
+                                verticalTextAlignment="center" />
+                            <stacklayout col={1} marginLeft={12} verticalAlignment="center">
+                                <label class="modernTitle modernStrong" lineBreak="end" maxLines={2} text={getLocationName(item)} textWrap={true} />
+                                <label class="modernSubtitle modernEllipsis" text={getFavoriteRegion(item)} />
+                            </stacklayout>
+                            <stacklayout col={2} marginLeft={8} verticalAlignment="center" visibility={item.timezone ? 'visible' : 'collapse'}>
+                                <label class="modernTitle modernStrong" text={formatTime(Date.now(), 'LT', item.timezoneOffset)} textAlignment="right" />
+                                <label
+                                    class={isCurrentLocation(item, weatherLocation) ? 'modernSubtitle modernAccent' : 'modernSubtitle'}
+                                    text={isCurrentLocation(item, weatherLocation) ? lc('selected') : timeDifferenceLabel(item.timezoneOffset, weatherLocation?.timezoneOffset)}
+                                    textAlignment="right" />
+                            </stacklayout>
+                            <IconButton col={3} gray={true} size={36} text="mdi-dots-vertical" verticalAlignment="center" on:tap={(event) => showFavMenu(item, event)} />
+                        </gridlayout>
+                    {:else}
+                        <gridlayout
+                            borderBottomColor={colorOutlineVariant}
+                            borderBottomWidth={1}
+                            borderRightColor={colorPrimary}
+                            borderRightWidth={isCurrentLocation(item, weatherLocation) ? 6 : 0}
+                            columns="*,auto"
+                            padding={10}
+                            rippleColor={colorOnSurface}
+                            on:tap={() => saveLocation(item)}>
+                            <stacklayout marginRight={30}>
+                                <label
+                                    color={colorOnSurface}
+                                    disableCss={true}
+                                    fontSize={17 * $fontScale}
+                                    fontWeight="bold"
+                                    lineBreak="end"
+                                    maxLines={2}
+                                    text={getLocationName(item)}
+                                    textWrap={true} />
+                                <label color={colorOnSurfaceVariant} disableCss={true} fontSize={14 * $fontScale} text={getFavoriteSubtitle(item)} textWrap={true} />
+                            </stacklayout>
+                            <label
+                                col={1}
+                                color={colorOnSurfaceVariant}
+                                disableCss={true}
+                                fontSize={14 * $fontScale}
+                                paddingTop={3 * $fontScale}
+                                text={formatTime(Date.now(), 'LT', item.timezoneOffset)}
+                                textWrap={true}
+                                verticalAlignment="top"
+                                visibility={item.timezone ? 'visible' : 'hidden'} />
+                            <IconButton col={1} gray={true} horizontalAlignment="right" size={40} text="mdi-dots-vertical" verticalAlignment="bottom" on:tap={(event) => showFavMenu(item, event)} />
+                        </gridlayout>
+                    {/if}
                 </Template>
             </collectionview>
+            {#if modern}
+                <mdbutton class="modernButtonOutline" margin="8 18 12 18" android:marginBottom={12 + $windowInset.bottom} row={2} variant="outline" on:tap={() => searchCity()}>
+                    <!-- spans do not inherit the button css weight: the accent (emphasis) weight -->
+                    <cspan fontFamily={$fonts.mdi} fontSize={18 * $fontScale} fontWeight="normal" text="mdi-plus" />
+                    <cspan fontWeight={$accentFontWeight} text={'  ' + lc('add_location')} />
+                </mdbutton>
+            {/if}
         </gridlayout>
     </drawer>
 </page>
