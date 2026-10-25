@@ -7,6 +7,7 @@
     import { openFilePicker, saveFile } from '@nativescript-community/ui-document-picker';
     import { Label } from '@nativescript-community/ui-label';
     import { showBottomSheet } from '@nativescript-community/ui-bottomsheet/svelte';
+    import { PromptOutcome, promptOutcome } from '~/utils/promptOutcome';
     import { confirm, prompt } from '~/utils/ui/dialogs';
     import { showSnack } from '~/utils/ui/snack';
     import { TextField, TextFieldProperties } from '@nativescript-community/ui-textfield';
@@ -1442,6 +1443,7 @@
                             message: item.useHTML ? item.description : item.full_description || item.description,
                             okButtonText: l('save'),
                             cancelButtonText: l('cancel'),
+                            neutralButtonText: item.onClear ? l('clear') : undefined,
                             textFieldProperties: item.textFieldProperties,
                             autoFocus: true,
                             defaultText: typeof item.rightValue === 'function' ? item.rightValue() : typeof item.default === 'function' ? item.default() : item.default,
@@ -1463,7 +1465,11 @@
                                 : undefined
                         });
                         Utils.dismissSoftInput();
-                        if (result && !!result.result && result.text.length > 0) {
+                        const outcome = promptOutcome(result);
+                        if (outcome === PromptOutcome.Clear) {
+                            item.onClear();
+                            updateItem(item);
+                        } else if (outcome === PromptOutcome.Save) {
                             if (item.id === 'store_setting') {
                                 const store = item.store || getStoreSetting(item.storeKey, item.storeDefault);
                                 if (item.valueType === 'string') {
@@ -1780,9 +1786,9 @@
                 <ListItemAutoSize columns="auto,*,auto" groupPosition={rowGroupPosition(item)} item={rowItem(item)} mainCol={1} showBottomLine={false} on:tap={(event) => onTap(item, event)}>
                     {#if item.dataIcon}
                         <label
-                            class={modern ? 'modernTile' : ''}
+                            class={modern ? 'modernTile themedIcon' : 'themedIcon'}
                             col={0}
-                            color={item.dataIconColor || colorOnBackground}
+                            color={item.dataIconColor}
                             fontFamily={$fonts[item.dataIcon.fontFamily]}
                             fontSize={modern ? 20 : 22}
                             marginRight={12}
@@ -1806,9 +1812,9 @@
             <Template key="leftIcon" let:item>
                 <ListItemAutoSize columns="auto,*,auto" groupPosition={rowGroupPosition(item)} item={rowItem(item)} mainCol={1} showBottomLine={false} on:tap={(event) => onTap(item, event)}>
                     {#if modern}
-                        <label class="modernTile" col={0} color={MODERN_ICON_COLORS[item.icon] || colorOnBackground} marginRight={12} text={item.icon} verticalAlignment="center" verticalTextAlignment="center" />
+                        <label class="modernTile themedIcon" col={0} color={MODERN_ICON_COLORS[item.icon]} marginRight={12} text={item.icon} verticalAlignment="center" verticalTextAlignment="center" />
                     {:else}
-                        <label col={0} color={colorOnBackground} fontFamily={$fonts.mdi} fontSize={24} padding="0 10 0 0" text={item.icon} verticalAlignment="center" />
+                        <label class="themedIcon" col={0} fontFamily={$fonts.mdi} fontSize={24} padding="0 10 0 0" text={item.icon} verticalAlignment="center" />
                     {/if}
                 </ListItemAutoSize>
             </Template>

@@ -414,7 +414,7 @@ export class MaptilerProvider extends WeatherProvider {
             ApplicationSettings.remove(API_KEY_SETTING);
         }
     }
-    public requiresApiKey() {
+    public static requiresApiKey() {
         return true;
     }
 
@@ -439,6 +439,7 @@ export class MaptilerProvider extends WeatherProvider {
                 icon: 'mdi-key',
                 id: 'setting',
                 key: API_KEY_SETTING,
+                onClear: () => MaptilerProvider.setApiKey(null),
                 default: () => MaptilerProvider.apiKey,
                 description: MaptilerProvider.getApiKeyDescription(),
                 title: lc('maptiler_api_key')
