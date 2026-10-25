@@ -398,7 +398,7 @@
     "units_cm_to_mm_desc": "当厘米值< 1时自动切换到毫米单位",
     "units_settings": "单位设置",
     "update_all_widgets_now": "立即更新所有小部件",
-    "updating_all_widgets": "正在更新所有小部件...",
+    "updating_all_widgets": "正在更新所有小部件…",
     "use_odd_colors_in_hourly": "每小时预报改变颜色",
     "uv_index": "紫外线指数",
     "version": "版本",
