@@ -117,7 +117,6 @@ module.exports = (env, params = {}) => {
         hiddenSourceMap,
         hmr, // --env.includeOWMKey
         includeDefaultLocation, // --env.buildweathermap
-        includeOWMKey, // --env.hiddenSourceMap
         inlineSourceMap, // --env.theme
         keep_classnames_functionnames = false, // --env.timeline
         locale = 'en', // --env.uglify
@@ -303,8 +302,6 @@ module.exports = (env, params = {}) => {
         MF_DEFAULT_KEY: '"__Wj7dVSTjV9YGu1guveLyDq0g7S7TfTjaHBTPTpO0kj8__"',
         ACCUWEATHER_DEFAULT_KEY: process.env.ACCUWEATHER_DEFAULT_KEY ? `"${process.env.ACCUWEATHER_DEFAULT_KEY || ''}"` : 'undefined',
         MF_API_KEY: `"${process.env.MF_API_KEY || ''}"`,
-        OWM_MY_KEY: includeOWMKey ? `"${process.env.OWM_MY_KEY}"` : 'undefined',
-        MAPTILER_KEY: `"${process.env.MAPTILER_KEY}"`,
         DEFAULT_LOCATION: includeDefaultLocation
             ? '\'{"name":"Grenoble","sys":{"osm_id":80348,"osm_type":"R","extent":[5.6776059,45.2140762,5.7531176,45.1541442],"country":"France","osm_key":"place","osm_value":"city","name":"Grenoble","state":"Auvergne-Rhône-Alpes"},"coord":{"lat":45.1875602,"lon":5.7357819}}\''
             : 'undefined',

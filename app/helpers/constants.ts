@@ -39,7 +39,6 @@ export const SETTINGS_WEATHER_LOCATION = 'weatherLocation';
 export const SETTINGS_FAVORITES = 'favorites';
 export const SETTINGS_DAILY_DATE_FORMAT = 'daily_date_format';
 export const SETTINGS_DAILY_DATA_ALIGNMENT = 'daily_data_alignment';
-export const SETTINGS_MAPTILER_DEFAULT_KEY = 'maptiler_api_key';
 export const SETTINGS_HOURLY_MAIN_DATA = 'hourly_main_data';
 
 export const DEFAULT_COLOR_THEME = 'default';
