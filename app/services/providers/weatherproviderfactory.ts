@@ -94,7 +94,8 @@ const ProvidersClassMap: ProvidersMap = {
 export type ProvidersClasses = ProvidersMap[keyof ProvidersMap];
 
 export function getProviderForType(newType: ProviderType): WeatherProvider {
-    return ProvidersClassMap[newType].getInstance();
+    const providerClass: { getInstance(): WeatherProvider } = ProvidersClassMap[newType];
+    return providerClass.getInstance();
 }
 export function getProviderClass(provider: ProviderType) {
     return ProvidersClassMap[provider];
