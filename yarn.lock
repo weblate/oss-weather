@@ -3110,10 +3110,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nativescript-community/ui-lottie@npm:6.0.0":
-  version: 6.0.0
-  resolution: "@nativescript-community/ui-lottie@npm:6.0.0"
-  checksum: 10/611fc1b6a91cd9e29b6284b57b380092e7d2f26202ae2b3eb2ec0ce9fd131a94fa7226e63a23f4d1cddb64ce5d1cde2c69cc137f394bd3f0d6d3439bfffc7574
+"@nativescript-community/ui-lottie@npm:5.0.11":
+  version: 5.0.11
+  resolution: "@nativescript-community/ui-lottie@npm:5.0.11"
+  checksum: 10/fe54763f86dcfe09a209fef6bcd9298285bb4a1fd3097d00e90ba5e0e33fad6f7d289d9b4479bf19f0a9046d62e2341a6490fbd7b3c149eec45d6c9a16de6613
   languageName: node
   linkType: hard
 
@@ -13656,7 +13656,7 @@ __metadata:
     "@nativescript-community/ui-drawer": "npm:0.1.32"
     "@nativescript-community/ui-image": "npm:4.6.20"
     "@nativescript-community/ui-label": "npm:2.0.4"
-    "@nativescript-community/ui-lottie": "npm:6.0.0"
+    "@nativescript-community/ui-lottie": "npm:5.0.11"
     "@nativescript-community/ui-pager": "npm:14.1.42"
     "@nativescript-community/ui-popover": "npm:0.1.22"
     "@nativescript-community/ui-progress": "npm:1.1.0"
