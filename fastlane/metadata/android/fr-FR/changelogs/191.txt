@@ -1,0 +1,12 @@
+Features:
+- add a clear button to the api key prompts (#603)
+
+Bug fixes:
+- replace model chips with one models chip and sheet (#591)
+- skip the highlight when the daily page has no start time (#594)
+- Translations update from Hosted Weblate (#595)
+- Translations update from Hosted Weblate (#596)
+- make requiresApiKey static for OpenWeather and Maptiler (#597)
+- compute modern colors from the real theme (#598)
+- apply the color theme live on ios (#599)
+- Translations update from Hosted Weblate (#
