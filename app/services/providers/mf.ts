@@ -539,8 +539,12 @@ export class MFProvider extends WeatherProvider {
         }
     }
 
+    public static requiresApiKey() {
+        return true;
+    }
+
     public static hasApiKey() {
-        return MFProvider.apiKey && MFProvider.apiKey.length && MFProvider.apiKey !== ACCUWEATHER_DEFAULT_KEY;
+        return !!MFProvider.apiKey && MFProvider.apiKey.length > 0;
     }
 
     public static getApiKey() {
